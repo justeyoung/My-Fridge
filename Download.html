@@ -37,6 +37,11 @@
       display: block;
     }
 
+    button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+
     table {
       border-collapse: collapse;
       width: 100%;
@@ -103,6 +108,8 @@
         const container = document.getElementById('pdfContainer');
         const today = getTodaySuffix();
 
+        const downloadButtons = [];
+
         Object.entries(grouped).forEach(([location, items], index) => {
           const section = document.createElement('div');
           section.className = 'section';
@@ -142,19 +149,34 @@
           section.appendChild(table);
 
           const btn = document.createElement('button');
-          btn.textContent = 'Download PDF';
-          btn.onclick = () => {
-            html2pdf().from(section).set({
-              margin: 10,
-              filename: `Inventory_${location.replace(/\s+/g, '-')}_${today}.pdf`,
-              html2canvas: { scale: 2 },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).save();
-          };
+          btn.textContent = 'Preparing...';
+          btn.disabled = true;
+
+          btn.addEventListener('click', () => {
+            section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            requestAnimationFrame(() => {
+              html2pdf().from(section).set({
+                margin: 10,
+                filename: `Inventory_${location.replace(/\s+/g, '-')}_${today}.pdf`,
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+              }).save();
+            });
+          });
 
           section.appendChild(btn);
           container.appendChild(section);
+          downloadButtons.push(btn);
         });
+
+        // Enable buttons after 10 seconds
+        setTimeout(() => {
+          downloadButtons.forEach(btn => {
+            btn.disabled = false;
+            btn.textContent = 'Download PDF';
+          });
+        }, 10000); // 10 seconds
+
       } catch (err) {
         const errMsg = document.createElement('p');
         errMsg.textContent = 'Error loading inventory.';
