@@ -1,58 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>My Fridge</title>
+
+  <!-- PWA Support -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4CAF50" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
+  <!-- Optional: Add icons for Apple -->
+  <link rel="apple-touch-icon" href="icon-192.png" />
+
   <style>
     body {
       font-family: sans-serif;
       margin: 0;
       padding: 2rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background-color: #f9f9f9;
+      text-align: center;
+      background: #f0f0f0;
     }
 
     h1 {
+      color: #4CAF50;
       margin-bottom: 2rem;
     }
 
-    .button {
-      width: 90%;
-      max-width: 400px;
-      padding: 1rem;
-      margin: 0.5rem;
-      font-size: 1.2rem;
+    button {
+      display: block;
+      margin: 1rem auto;
+      padding: 1rem 2rem;
+      font-size: 1rem;
       background-color: #4CAF50;
       color: white;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      text-align: center;
+      width: 80%;
+      max-width: 300px;
     }
 
-    .button:hover {
-      background-color: #45a049;
-    }
-
-    .install {
-      margin-top: 2rem;
-      font-size: 0.9rem;
-      color: #555;
+    #installBtn {
+      background-color: #333;
+      margin-top: 3rem;
     }
   </style>
 </head>
 <body>
+
   <h1>My Fridge</h1>
 
-  <button class="button" onclick="location.href='scanner.html'">Open Scanner</button>
-  <button class="button" onclick="location.href='view.html'">Inventory Viewer</button>
-  <button class="button" onclick="location.href='download.html'">Download Inventory (PDF)</button>
+  <button onclick="location.href='scanner.html'">Open Scanner</button>
+  <button onclick="location.href='view.html'">Inventory Viewer</button>
+  <button onclick="location.href='download.html'">Download Inventory (PDF)</button>
 
-  <div class="install">
-    <em>Tip: Install this app to your home screen for quick access.</em>
-  </div>
+  <button id="installBtn" style="display:none;">Install App</button>
+
+  <script>
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = 'block';
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        if (choice.outcome === 'accepted') {
+          installBtn.style.display = 'none';
+        }
+        deferredPrompt = null;
+      }
+    });
+  </script>
+
 </body>
 </html>
