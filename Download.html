@@ -145,18 +145,29 @@
           btn.disabled = true;
 
           btn.addEventListener('click', () => {
-            const originalHTML = document.documentElement.innerHTML;
             const clone = section.cloneNode(true);
-
-            document.body.innerHTML = '';
-            document.body.appendChild(clone);
-            window.print();
-
-            setTimeout(() => {
-              document.open();
-              document.write(originalHTML);
-              document.close();
-            }, 500);
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+              <html>
+                <head>
+                  <title>Inventory - ${location}</title>
+                  <style>
+                    body { font-family: sans-serif; padding: 2rem; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; }
+                    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+                    th { background-color: #4CAF50; color: white; }
+                    h3 { text-align: center; }
+                  </style>
+                </head>
+                <body>
+                  ${clone.outerHTML}
+                </body>
+              </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+            printWindow.onafterprint = () => printWindow.close();
           });
 
           section.appendChild(btn);
