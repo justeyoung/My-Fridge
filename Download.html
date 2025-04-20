@@ -160,7 +160,7 @@
                 html2canvas: { scale: 2 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
               }).save();
-            }, 1000); // wait 1 second after scroll
+            }, 2000); // wait 2 seconds after scroll
           });
 
           section.appendChild(btn);
@@ -168,13 +168,13 @@
           downloadButtons.push(btn);
         });
 
-        // Enable buttons after 10 seconds
+        // Enable buttons after 20 seconds
         setTimeout(() => {
           downloadButtons.forEach(btn => {
             btn.disabled = false;
             btn.textContent = 'Download PDF';
           });
-        }, 10000);
+        }, 20000); // 20 sec
 
       } catch (err) {
         const errMsg = document.createElement('p');
