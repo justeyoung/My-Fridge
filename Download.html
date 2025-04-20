@@ -55,10 +55,12 @@
       color: white;
     }
 
-    #temp-container {
+    .pdf-clone {
       position: absolute;
-      left: -9999px;
+      left: 0;
       top: 0;
+      visibility: hidden;
+      z-index: -1;
     }
   </style>
 </head>
@@ -66,7 +68,6 @@
 
   <h2>Download Inventory PDFs by Location</h2>
   <div id="pdfContainer"></div>
-  <div id="temp-container"></div>
 
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
@@ -108,7 +109,6 @@
 
         const grouped = groupByLocation(data);
         const container = document.getElementById('pdfContainer');
-        const tempContainer = document.getElementById('temp-container');
         const today = getTodaySuffix();
 
         Object.entries(grouped).forEach(([location, items], index) => {
@@ -153,16 +153,19 @@
           btn.textContent = 'Download PDF';
           btn.onclick = () => {
             const clone = section.cloneNode(true);
-            tempContainer.innerHTML = ''; // Clear previous
-            tempContainer.appendChild(clone);
+            clone.classList.add('pdf-clone');
+            document.body.appendChild(clone);
+
             requestAnimationFrame(() => {
-              html2pdf().from(clone).set({
-                margin: 10,
-                filename: `Inventory_${location.replace(/\s+/g, '-')}_${today}.pdf`,
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-              }).save().then(() => {
-                tempContainer.innerHTML = ''; // Clean up after save
+              requestAnimationFrame(() => {
+                html2pdf().from(clone).set({
+                  margin: 10,
+                  filename: `Inventory_${location.replace(/\s+/g, '-')}_${today}.pdf`,
+                  html2canvas: { scale: 2 },
+                  jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                }).save().then(() => {
+                  document.body.removeChild(clone);
+                });
               });
             });
           };
