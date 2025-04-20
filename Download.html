@@ -24,8 +24,9 @@
       margin-top: 2rem;
     }
 
-    button:hover {
-      background-color: #45a049;
+    button:disabled {
+      background-color: #888;
+      cursor: not-allowed;
     }
 
     table {
@@ -50,7 +51,7 @@
 <body>
 
   <h2>Download Your Inventory as PDF</h2>
-  <button onclick="generatePDF()">Download PDF</button>
+  <button id="downloadBtn" disabled>Loading Inventory...</button>
 
   <div id="inventoryContent">
     <h3>My Fridge Inventory</h3>
@@ -64,47 +65,58 @@
 
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
+    const downloadBtn = document.getElementById('downloadBtn');
 
-    // Load data immediately on page load
-    window.addEventListener('DOMContentLoaded', async () => {
-      const response = await fetch(scriptURL);
-      const data = await response.json();
+    async function loadAndRenderInventory() {
+      try {
+        const response = await fetch(scriptURL);
+        const data = await response.json();
 
-      if (!data || !data.length) {
-        document.getElementById('inventoryContent').innerHTML = '<p>No data found.</p>';
-        return;
-      }
+        if (!data || !data.length) {
+          downloadBtn.textContent = 'No data to download';
+          return;
+        }
 
-      const headers = Object.keys(data[0]);
-      const headerRow = document.getElementById('tableHeader');
-      const tableBody = document.getElementById('tableBody');
+        const headers = Object.keys(data[0]);
+        const headerRow = document.getElementById('tableHeader');
+        const tableBody = document.getElementById('tableBody');
 
-      headers.forEach(header => {
-        const th = document.createElement('th');
-        th.textContent = header;
-        headerRow.appendChild(th);
-      });
-
-      data.forEach(row => {
-        const tr = document.createElement('tr');
         headers.forEach(header => {
-          const td = document.createElement('td');
-          td.textContent = row[header];
-          tr.appendChild(td);
+          const th = document.createElement('th');
+          th.textContent = header;
+          headerRow.appendChild(th);
         });
-        tableBody.appendChild(tr);
-      });
-    });
 
-    function generatePDF() {
-      const element = document.getElementById('inventoryContent');
-      html2pdf().from(element).set({
-        margin: 10,
-        filename: 'MyFridgeInventory.pdf',
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      }).save();
+        data.forEach(item => {
+          const row = document.createElement('tr');
+          headers.forEach(header => {
+            const td = document.createElement('td');
+            td.textContent = item[header];
+            row.appendChild(td);
+          });
+          tableBody.appendChild(row);
+        });
+
+        // Enable the button after table is fully loaded
+        downloadBtn.textContent = 'Download PDF';
+        downloadBtn.disabled = false;
+        downloadBtn.onclick = () => {
+          const element = document.getElementById('inventoryContent');
+          html2pdf().from(element).set({
+            margin: 10,
+            filename: 'MyFridgeInventory.pdf',
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          }).save();
+        };
+      } catch (err) {
+        downloadBtn.textContent = 'Error loading data';
+        console.error(err);
+      }
     }
+
+    // Run on page load
+    loadAndRenderInventory();
   </script>
 
 </body>
