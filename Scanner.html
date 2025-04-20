@@ -2,160 +2,99 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Add Item</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Add Item to Fridge</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <h2>Add Item to Fridge</h2>
 
-  <h2>Add Item</h2>
+  <button id="scan-btn" class="btn">Scan Barcode</button>
 
-  <button class="green-btn" onclick="startScanner()">Scan Barcode</button>
-  <div id="scanner" style="display:none;"></div>
-  <button id="flipCameraBtn" class="green-btn" style="display:none;" onclick="flipCamera()">Flip Camera</button>
-  <button id="cancelScanBtn" class="green-btn" style="display:none;" onclick="cancelScan()">Cancel Scan</button>
+  <div class="form-container">
+    <label>Item Name:
+      <input type="text" id="itemName" required>
+    </label>
 
-  <form id="itemForm">
-    <label for="item">Item Name:</label>
-    <input type="text" id="item" name="item" required>
-    <div id="lookupStatus"></div>
+    <label>Quantity:
+      <input type="number" id="quantity" value="1" min="1">
+    </label>
 
-    <label for="quantity">Quantity:</label>
-    <input type="number" id="quantity" name="quantity" value="1" min="1" required>
+    <label>Unit: (optional)
+      <input type="text" id="unit">
+    </label>
 
-    <label for="unit">Unit:</label>
-    <input type="text" id="unit" name="unit">
+    <label>Purchase Date:
+      <input type="date" id="purchaseDate">
+    </label>
 
-    <label for="purchase">Purchase Date:</label>
-    <input type="date" id="purchase" name="purchaseDate">
+    <label>Expiry Date: (optional)
+      <input type="date" id="expiryDate">
+    </label>
 
-    <label for="expiry">Expiry Date:</label>
-    <input type="date" id="expiry" name="expiryDate">
+    <label>Location:
+      <select id="location">
+        <option value="">Select location</option>
+        <option value="Freezer (garage)">Freezer (garage)</option>
+        <option value="Freezer (dining room)">Freezer (dining room)</option>
+        <option value="Fridge (dining room)">Fridge (dining room)</option>
+        <option value="Fridge (kitchen)">Fridge (kitchen)</option>
+      </select>
+    </label>
 
-    <label for="location">Location:</label>
-    <select id="location" name="location">
-      <option value="">Select location</option>
-      <option value="Fridge (kitchen)">Fridge (kitchen)</option>
-      <option value="Fridge (dining room)">Fridge (dining room)</option>
-      <option value="Freezer (garage)">Freezer (garage)</option>
-      <option value="Freezer (dining room)">Freezer (dining room)</option>
-    </select>
+    <label>Scanned Barcode:
+      <input type="text" id="barcode" readonly placeholder="(none)">
+    </label>
 
-    <label>Scanned Barcode:</label>
-    <div id="barcodeDisplay">(none)</div>
-    <input type="hidden" id="barcode" name="barcode">
-
-    <button type="submit" class="green-btn">Add Item</button>
-  </form>
-
-  <div id="status"></div>
-  <a href="index.html" class="home-button">Home</a>
+    <button id="submitBtn" class="btn">Add Item</button>
+    <p id="statusMsg"></p>
+    <button onclick="goHome()" class="btn btn-grey">Home</button>
+  </div>
 
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
-    const itemInput = document.getElementById("item");
-    const lookupStatus = document.getElementById("lookupStatus");
+    const webAppUrl = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
 
-    let html5QrCode;
-    let currentCameraIndex = 0;
-    let cameras = [];
+    document.getElementById('submitBtn').addEventListener('click', () => {
+      const item = document.getElementById('itemName').value.trim();
+      const quantity = document.getElementById('quantity').value;
+      const unit = document.getElementById('unit').value;
+      const purchaseDate = document.getElementById('purchaseDate').value;
+      const expiryDate = document.getElementById('expiryDate').value;
+      const location = document.getElementById('location').value;
+      const barcode = document.getElementById('barcode').value;
 
-    document.getElementById("purchase").value = new Date().toISOString().split("T")[0];
-
-    function startScanner() {
-      document.getElementById("scanner").style.display = "block";
-      document.getElementById("flipCameraBtn").style.display = "inline-block";
-      document.getElementById("cancelScanBtn").style.display = "inline-block";
-
-      Html5Qrcode.getCameras().then(devices => {
-        cameras = devices;
-        if (cameras.length > 0) {
-          html5QrCode = new Html5Qrcode("scanner");
-          html5QrCode.start(
-            cameras[currentCameraIndex].id,
-            { fps: 10, qrbox: 250 },
-            (decodedText) => {
-              stopScanner();
-              document.getElementById("barcode").value = decodedText;
-              document.getElementById("barcodeDisplay").textContent = decodedText;
-              lookupProduct(decodedText);
-            }
-          ).catch(err => {
-            console.error("Scanner error:", err);
-            stopScanner();
-          });
-        }
+      const params = new URLSearchParams({
+        item,
+        quantity,
+        unit,
+        purchaseDate,
+        expiryDate,
+        location,
+        barcode
       });
-    }
 
-    function flipCamera() {
-      if (cameras.length < 2) return;
-      currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
-      html5QrCode.stop().then(() => {
-        html5QrCode.clear();
-        startScanner();
-      });
-    }
+      fetch(`${webAppUrl}?${params.toString()}`)
+        .then(response => response.text())
+        .then(result => {
+          const statusMsg = document.getElementById('statusMsg');
+          statusMsg.textContent = result;
+          statusMsg.style.color = result.includes('successfully') ? 'green' : 'red';
 
-    function cancelScan() {
-      if (html5QrCode) {
-        html5QrCode.stop().then(() => {
-          html5QrCode.clear();
-          document.getElementById("scanner").style.display = "none";
-          document.getElementById("flipCameraBtn").style.display = "none";
-          document.getElementById("cancelScanBtn").style.display = "none";
-        });
-      }
-    }
-
-    function stopScanner() {
-      html5QrCode.stop().then(() => {
-        html5QrCode.clear();
-        document.getElementById("scanner").style.display = "none";
-        document.getElementById("flipCameraBtn").style.display = "none";
-        document.getElementById("cancelScanBtn").style.display = "none";
-      });
-    }
-
-    function lookupProduct(barcode) {
-      lookupStatus.textContent = "Looking up product...";
-      fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.status === 1) {
-            const productName = data.product.product_name || data.product.generic_name || '';
-            itemInput.value = productName;
-            lookupStatus.textContent = `Found: ${productName}`;
-          } else {
-            lookupStatus.textContent = "No match found. You can enter the name manually.";
-          }
-        })
-        .catch(() => {
-          lookupStatus.textContent = "Error looking up product.";
-        });
-    }
-
-    document.getElementById("itemForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      fetch(scriptURL + '?' + new URLSearchParams(formData), { method: 'GET' })
-        .then(() => {
-          const status = document.getElementById("status");
-          status.textContent = "Item added successfully.";
-          setTimeout(() => status.textContent = "", 5000);
-          e.target.reset();
-          document.getElementById("barcodeDisplay").textContent = "(none)";
-          lookupStatus.textContent = "";
-          document.getElementById("purchase").value = new Date().toISOString().split("T")[0];
-        })
-        .catch(() => {
-          const status = document.getElementById("status");
-          status.textContent = "Error adding item.";
-          setTimeout(() => status.textContent = "", 5000);
+          setTimeout(() => {
+            statusMsg.textContent = '';
+          }, 5000);
         });
     });
-  </script>
 
+    document.getElementById('scan-btn').addEventListener('click', () => {
+      window.location.href = 'scanner.html';
+    });
+
+    function goHome() {
+      window.location.href = 'index.html';
+    }
+
+    document.getElementById('purchaseDate').valueAsDate = new Date();
+  </script>
 </body>
 </html>
