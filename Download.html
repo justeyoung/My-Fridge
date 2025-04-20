@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -146,17 +145,18 @@
           btn.disabled = true;
 
           btn.addEventListener('click', () => {
-            const original = document.body.cloneNode(true);
+            const originalHTML = document.documentElement.innerHTML;
             const clone = section.cloneNode(true);
+
             document.body.innerHTML = '';
             document.body.appendChild(clone);
-
-            // Print, then reload to restore all state
             window.print();
 
             setTimeout(() => {
-              location.reload();
-            }, 500); // ensures full reload after print or cancel
+              document.open();
+              document.write(originalHTML);
+              document.close();
+            }, 500);
           });
 
           section.appendChild(btn);
