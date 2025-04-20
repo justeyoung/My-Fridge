@@ -1,151 +1,104 @@
-/* Body and Layout */
 body {
   font-family: Arial, sans-serif;
-  margin: 20px;
-  padding: 0;
+  padding: 20px;
   background-color: #f8f8f8;
-  color: #333;
   text-align: center;
 }
 
-h2, h3 {
-  color: #2c7a2f;
-  margin-top: 30px;
+h2 {
+  color: green;
+  margin-bottom: 20px;
 }
 
-/* Inventory Tables */
-.inventory-table {
-  width: 90%;
-  max-width: 700px;
-  margin: 0 auto 20px auto;
-  border-collapse: collapse;
-  background-color: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.inventory-table th,
-.inventory-table td {
-  border: 1px solid #ccc;
-  padding: 10px;
+h3 {
+  margin-top: 40px;
+  color: #333;
   text-align: left;
 }
 
-.inventory-table th {
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0 30px 0;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
   background-color: #4CAF50;
   color: white;
 }
 
-.inventory-table td {
-  background-color: #fff;
+.location-group {
+  margin-bottom: 30px;
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
 }
 
-/* Buttons */
-button,
-.green-btn,
-.red-btn,
-.home-button {
-  display: inline-block;
+button {
   padding: 10px 20px;
-  font-size: 14px;
-  margin: 15px auto;
   border: none;
-  border-radius: 4px;
+  font-size: 16px;
+  border-radius: 5px;
   cursor: pointer;
-  text-decoration: none;
-  text-align: center;
 }
 
-.green-btn,
-button.green-btn {
+.home-btn {
+  background-color: #444;
+  color: white;
+  margin-top: 20px;
+}
+
+.home-btn:hover {
+  background-color: #333;
+}
+
+.success-message {
+  color: green;
+  margin-top: 10px;
+}
+
+.error-message {
+  color: red;
+  margin-top: 10px;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin: 6px 0 12px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+form {
+  max-width: 400px;
+  margin: 0 auto;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+}
+
+label {
+  display: block;
+  text-align: left;
+  margin-top: 12px;
+  font-weight: bold;
+}
+
+.green-btn {
   background-color: #4CAF50;
   color: white;
 }
 
 .green-btn:hover {
   background-color: #45a049;
-}
-
-.red-btn {
-  background-color: #f44336;
-  color: white;
-}
-
-.red-btn:hover {
-  background-color: #d73833;
-}
-
-.home-button {
-  background-color: #444;
-  color: white;
-  margin-top: 30px;
-}
-
-.home-button:hover {
-  background-color: #222;
-}
-
-/* Forms */
-form {
-  max-width: 400px;
-  margin: 30px auto;
-  background: #fff;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}
-
-label {
-  display: block;
-  margin-top: 1rem;
-  font-weight: bold;
-  text-align: left;
-}
-
-input, select {
-  width: 100%;
-  padding: 0.5rem;
-  margin-top: 0.3rem;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
-}
-
-/* Scanner Display */
-#scanner {
-  margin: 20px auto;
-  max-width: 400px;
-}
-
-#barcodeDisplay {
-  background: #eee;
-  padding: 0.5rem;
-  margin-top: 0.3rem;
-  border-radius: 5px;
-}
-
-/* Status messages */
-#status {
-  text-align: center;
-  margin-top: 1rem;
-  color: green;
-}
-
-#error {
-  color: red;
-  margin-top: 1rem;
-}
-
-/* Responsive Tweaks */
-@media (max-width: 600px) {
-  .inventory-table {
-    font-size: 13px;
-  }
-
-  button,
-  .green-btn,
-  .red-btn,
-  .home-button {
-    font-size: 13px;
-    padding: 8px 16px;
-  }
 }
