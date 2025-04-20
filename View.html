@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Inventory Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Current Inventory</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h2>Inventory</h2>
-
+  <h2>Current Inventory</h2>
   <div id="inventoryTable">Loading...</div>
   <button class="home-button" onclick="location.href='index.html'">Home</button>
 
@@ -19,44 +18,50 @@
       .then(res => res.json())
       .then(data => {
         if (!Array.isArray(data) || data.length === 0) {
-          document.getElementById("inventoryTable").textContent = "No data found.";
+          document.getElementById("inventoryTable").textContent = "No inventory data found.";
           return;
         }
 
-        const table = document.createElement("table");
-        const headerRow = table.insertRow();
-
-        const headers = Object.keys(data[0]);
-        headers.forEach(header => {
-          const th = document.createElement("th");
-          th.textContent = header;
-          headerRow.appendChild(th);
+        // Group items by Location
+        const grouped = {};
+        data.forEach(item => {
+          const loc = item["Location"] || "Unknown";
+          if (!grouped[loc]) grouped[loc] = [];
+          grouped[loc].push(item);
         });
 
-        data.forEach(entry => {
-          const row = table.insertRow();
-          headers.forEach(header => {
-            const cell = row.insertCell();
-            let value = entry[header];
+        const container = document.getElementById("inventoryTable");
+        container.innerHTML = "";
 
-            // Format expiry and purchase dates
-            if (header.includes("Date") && value) {
-              try {
-                const date = new Date(value);
-                value = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth()+1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-              } catch {}
-            }
+        // Render each location group
+        Object.keys(grouped).sort().forEach(location => {
+          const section = document.createElement("div");
+          const title = document.createElement("h3");
+          title.textContent = `Location: ${location}`;
+          section.appendChild(title);
 
-            cell.textContent = value || "";
+          const table = document.createElement("table");
+          const thead = table.insertRow();
+          ["#", "Item", "Quantity", "Unit"].forEach(h => {
+            const th = document.createElement("th");
+            th.textContent = h;
+            thead.appendChild(th);
           });
-        });
 
-        const wrapper = document.getElementById("inventoryTable");
-        wrapper.innerHTML = "";
-        wrapper.appendChild(table);
+          grouped[location].forEach((entry, index) => {
+            const row = table.insertRow();
+            row.insertCell().textContent = index + 1;
+            row.insertCell().textContent = entry["Item"] || "";
+            row.insertCell().textContent = entry["Quantity"] || "";
+            row.insertCell().textContent = entry["Unit"] || "";
+          });
+
+          section.appendChild(table);
+          container.appendChild(section);
+        });
       })
       .catch(error => {
-        console.error("Error fetching data:", error);
+        console.error("Error loading data:", error);
         document.getElementById("inventoryTable").textContent = "Error fetching inventory data.";
       });
   </script>
