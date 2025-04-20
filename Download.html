@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Download Inventory PDF - My Fridge</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      text-align: center;
+      background: #f9f9f9;
+    }
+
+    button {
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 2rem;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    table {
+      margin-top: 2rem;
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.5rem;
+      text-align: left;
+    }
+
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Download Your Inventory as PDF</h2>
+  <button onclick="generatePDF()">Download PDF</button>
+
+  <div id="inventoryContent" class="hidden">
+    <h3>My Fridge Inventory</h3>
+    <table id="inventoryTable">
+      <thead>
+        <tr id="tableHeader"></tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
+
+    async function fetchInventory() {
+      try {
+        const response = await fetch(scriptURL);
+        const data = await response.json();
+
+        if (!data || !data.length) return;
+
+        const headers = Object.keys(data[0]);
+        const headerRow = document.getElementById('tableHeader');
+        headers.forEach(header => {
+          const th = document.createElement('th');
+          th.textContent = header;
+          headerRow.appendChild(th);
+        });
+
+        const tableBody = document.getElementById('tableBody');
+        data.forEach(item => {
+          const row = document.createElement('tr');
+          headers.forEach(header => {
+            const td = document.createElement('td');
+            td.textContent = item[header];
+            row.appendChild(td);
+          });
+          tableBody.appendChild(row);
+        });
+
+      } catch (err) {
+        alert('Error fetching inventory.');
+        console.error(err);
+      }
+    }
+
+    async function generatePDF() {
+      await fetchInventory(); // Load data before exporting
+      const element = document.getElementById('inventoryContent');
+      element.classList.remove('hidden');
+      html2pdf().from(element).save('MyFridgeInventory.pdf');
+      element.classList.add('hidden');
+    }
+  </script>
+
+</body>
+</html>
