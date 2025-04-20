@@ -69,45 +69,38 @@
 
     let scanner = null;
 
-    // Enable submit only when item name is entered
     itemName.addEventListener("input", () => {
       submitBtn.disabled = itemName.value.trim() === "";
     });
 
-    // Set today's date by default
     document.getElementById("purchaseDate").valueAsDate = new Date();
 
-    // Show scan view
     function showScan() {
       document.getElementById("itemForm").style.display = "none";
       scanSection.style.display = "block";
     }
 
-    // Cancel scan
     function cancelScan() {
       scanSection.style.display = "none";
       document.getElementById("itemForm").style.display = "block";
       if (scanner) scanner.reset();
     }
 
-    // Go Home
     function goHome() {
       window.location.href = "index.html";
     }
 
-    // Start barcode scan
     function startScan() {
       scanner = new ZXing.BrowserBarcodeReader();
       scanner.decodeOnceFromVideoDevice(undefined, preview).then(result => {
         scannedBarcode.textContent = result.text;
         cancelScan();
-      }).catch(err => {
+      }).catch(() => {
         scannedBarcode.textContent = "(scan failed)";
         cancelScan();
       });
     }
 
-    // Submit form
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -133,7 +126,7 @@
           form.reset();
           scannedBarcode.textContent = "(none)";
           submitBtn.disabled = true;
-          document.getElementById("purchaseDate").valueAsDate = new Date(); // Reset purchase date
+          document.getElementById("purchaseDate").valueAsDate = new Date();
         }
       } catch (err) {
         statusMessage.textContent = "Error adding item.";
