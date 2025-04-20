@@ -66,9 +66,10 @@
     let cameras = [];
 
     function startScanner() {
+      document.getElementById("scanner").style.display = "block";
       cancelBtn.style.display = "inline-block";
       flipBtn.style.display = "inline-block";
-      document.getElementById("scanner").style.display = "block";
+
       Html5Qrcode.getCameras().then(devices => {
         cameras = devices;
         if (cameras.length > 0) {
@@ -139,14 +140,13 @@
 
     document.getElementById("itemForm").addEventListener("submit", function(e) {
       e.preventDefault();
-      const form = e.target;
-      const formData = new FormData(form);
+      const formData = new FormData(e.target);
       fetch(scriptURL + '?' + new URLSearchParams(formData), { method: 'GET' })
         .then(() => {
           const status = document.getElementById("status");
           status.textContent = "Item added successfully.";
           setTimeout(() => status.textContent = "", 5000);
-          form.reset();
+          e.target.reset();
           document.getElementById("barcodeDisplay").textContent = "(none)";
           lookupStatus.textContent = "";
           document.getElementById("purchase").value = new Date().toISOString().split("T")[0];
@@ -158,5 +158,6 @@
         });
     });
   </script>
+
 </body>
 </html>
