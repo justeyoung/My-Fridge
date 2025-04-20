@@ -11,12 +11,10 @@
       padding: 2rem;
       background: #f4f4f4;
     }
-
     h2 {
       text-align: center;
       color: #f44336;
     }
-
     form {
       max-width: 400px;
       margin: auto;
@@ -25,13 +23,11 @@
       border-radius: 8px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-
     label {
       display: block;
       margin-top: 1rem;
       font-weight: bold;
     }
-
     input, select {
       width: 100%;
       padding: 0.5rem;
@@ -39,7 +35,6 @@
       border-radius: 5px;
       border: 1px solid #ccc;
     }
-
     .red-btn {
       display: block;
       margin: 1rem auto;
@@ -53,38 +48,32 @@
       font-size: 1rem;
       cursor: pointer;
     }
-
     #scanner {
       display: none;
       margin: 2rem auto;
       max-width: 400px;
     }
-
     .scan-active #scanner,
     .scan-active #cancelScanBtn,
     .scan-active #flipCameraBtn {
       display: block;
     }
-
     .scan-active form {
       display: none;
     }
-
-    #cancelScanBtn,
-    #flipCameraBtn {
+    #cancelScanBtn, #flipCameraBtn {
       display: none;
     }
-
-    #status {
-      text-align: center;
-      margin-top: 1rem;
-    }
-
     #barcodeDisplay {
       background: #eee;
       padding: 0.5rem;
       margin-top: 0.3rem;
       border-radius: 5px;
+    }
+    #status {
+      text-align: center;
+      margin-top: 1rem;
+      color: green;
     }
   </style>
 </head>
@@ -98,7 +87,6 @@
   <button type="button" id="cancelScanBtn" class="red-btn" onclick="cancelScan()">Cancel Scan</button>
 
   <form id="removeForm">
-    <!-- Hidden flag to tell script this is a REMOVE action -->
     <input type="hidden" name="remove" value="true">
 
     <label for="item">Item Name:</label>
@@ -143,7 +131,7 @@
         cameras = devices;
         if (cameras.length > 0) {
           const cameraId = cameras[currentCameraIndex].id;
-          html5QrCode = new Html5Qrcode("scanner");
+          html5QrCode = new Html5QrCode("scanner");
           html5QrCode.start(
             cameraId,
             { fps: 10, qrbox: 250 },
@@ -194,12 +182,16 @@
       const formData = new FormData(e.target);
       fetch(scriptURL + '?' + new URLSearchParams(formData), { method: 'GET' })
         .then(() => {
-          document.getElementById("status").textContent = "Item removed (or updated).";
+          const status = document.getElementById("status");
+          status.textContent = "Item removed (or updated).";
+          setTimeout(() => status.textContent = "", 5000);
           e.target.reset();
           barcodeDisplay.textContent = "(none)";
         })
         .catch(() => {
-          document.getElementById("status").textContent = "Error removing item.";
+          const status = document.getElementById("status");
+          status.textContent = "Error removing item.";
+          setTimeout(() => status.textContent = "", 5000);
         });
     });
   </script>
