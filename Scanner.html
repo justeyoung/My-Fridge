@@ -10,10 +10,11 @@
       width: 100%;
       max-width: 400px;
       margin: 20px auto;
+      display: none;
     }
 
     .scanner-controls {
-      margin-top: 10px;
+      margin-top: 20px;
       z-index: 2;
       position: relative;
     }
@@ -26,43 +27,71 @@
 <body>
   <h2>Scan Barcode</h2>
 
-  <div id="reader"></div>
-
   <div class="scanner-controls">
-    <button class="green-btn" id="cancelBtn" type="button">Cancel Scan</button>
+    <button class="green-btn" id="startBtn" type="button">Start Scanning</button>
+    <button class="green-btn" id="cancelBtn" type="button" disabled>Cancel Scan</button>
     <button class="home-btn" type="button" onclick="location.href='index.html'">Home</button>
   </div>
+
+  <div id="reader"></div>
 
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script>
     const reader = new Html5Qrcode("reader");
+    let cameraId = null;
+    let scanning = false;
 
     function onScanSuccess(decodedText) {
       sessionStorage.setItem("barcode", decodedText);
-      reader.stop().then(() => {
-        window.location.href = "add.html";
+      stopScan(() => window.location.href = "add.html");
+    }
+
+    function startScan() {
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          cameraId = devices[0].id;
+          reader.start(cameraId, { fps: 10, qrbox: 250 }, onScanSuccess)
+            .then(() => {
+              document.getElementById("reader").style.display = "block";
+              document.getElementById("cancelBtn").disabled = false;
+              scanning = true;
+            })
+            .catch(err => {
+              alert("Failed to start scanner: " + err);
+            });
+        } else {
+          alert("No camera found.");
+        }
+      }).catch(err => {
+        alert("Camera access error: " + err);
       });
     }
 
-    function startScanner() {
-      const config = { fps: 10, qrbox: { width: 250, height: 150 } };
-      Html5Qrcode.getCameras().then(devices => {
-        const cameraId = devices[0].id;
-        reader.start(cameraId, config, onScanSuccess).catch(err => {
-          alert("Camera error: " + err);
+    function stopScan(callback) {
+      if (scanning) {
+        reader.stop().then(() => {
+          document.getElementById("reader").style.display = "none";
+          document.getElementById("cancelBtn").disabled = true;
+          scanning = false;
+          if (callback) callback();
+        }).catch(err => {
+          console.warn("Failed to stop scanner:", err);
+          if (callback) callback();
         });
-      });
+      } else if (callback) {
+        callback();
+      }
     }
+
+    document.getElementById("startBtn").addEventListener("click", () => {
+      startScan();
+    });
 
     document.getElementById("cancelBtn").addEventListener("click", () => {
-      reader.stop().then(() => {
-        window.location.href = "add.html";
-      }).catch(() => {
+      stopScan(() => {
         window.location.href = "add.html";
       });
     });
-
-    startScanner();
   </script>
 </body>
 </html>
