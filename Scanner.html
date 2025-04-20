@@ -86,16 +86,17 @@
         notes: document.getElementById('notes').value
       };
 
-      const response = await fetch('https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' }
-      });
+      const params = new URLSearchParams(data).toString();
+      const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
 
-      const result = await response.text();
-      document.getElementById('message').textContent = result;
-
-      document.getElementById('itemForm').reset();
+      try {
+        const response = await fetch(`${scriptURL}?${params}`);
+        const result = await response.text();
+        document.getElementById('message').textContent = result;
+        document.getElementById('itemForm').reset();
+      } catch (error) {
+        document.getElementById('message').textContent = 'Error adding item.';
+      }
     });
   </script>
 
