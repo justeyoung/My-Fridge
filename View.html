@@ -2,97 +2,89 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Inventory Viewer - My Fridge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inventory Viewer</title>
   <style>
     body {
-      font-family: sans-serif;
-      margin: 2rem;
-      background: #f9f9f9;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #fff;
     }
-
     h2 {
       text-align: center;
     }
-
+    .error {
+      color: red;
+      text-align: center;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1rem;
+      margin-top: 20px;
     }
-
     th, td {
-      padding: 0.8rem;
+      padding: 8px;
       border: 1px solid #ccc;
       text-align: left;
     }
-
     th {
       background-color: #4CAF50;
       color: white;
     }
-
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
+    #homeButton {
+      display: block;
+      margin: 30px auto 0;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
     }
-
-    .message {
-      text-align: center;
-      margin-top: 1rem;
-      color: red;
+    #homeButton:hover {
+      background-color: #45a049;
     }
   </style>
 </head>
 <body>
-
   <h2>Current Inventory</h2>
+  <div id="error" class="error"></div>
+  <div id="inventoryTable"></div>
 
-  <div class="message" id="message"></div>
-  <table id="inventoryTable">
-    <thead>
-      <tr id="tableHeader"></tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+  <button id="homeButton" onclick="window.location.href='index.html'">Home</button>
 
   <script>
-    async function fetchInventory() {
-      const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
-      try {
-        const response = await fetch(scriptURL);
-        const data = await response.json();
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec?action=view';
 
-        if (data.length === 0) {
-          document.getElementById('message').textContent = 'No inventory data available.';
-          return;
-        }
+    fetch(scriptURL)
+      .then(response => response.json())
+      .then(data => {
+        if (!Array.isArray(data)) throw new Error('Invalid data format');
 
-        const headers = Object.keys(data[0]);
-        const headerRow = document.getElementById('tableHeader');
-        headers.forEach(header => {
-          const th = document.createElement('th');
-          th.textContent = header;
-          headerRow.appendChild(th);
+        let table = '<table><tr><th>ID</th><th>Item</th><th>Barcode</th><th>Quantity</th><th>Unit</th><th>Purchase Date</th><th>Expiry Date</th><th>Location</th><th>Notes</th></tr>';
+
+        data.forEach(row => {
+          table += `<tr>
+            <td>${row[0] || ''}</td>
+            <td>${row[1] || ''}</td>
+            <td>${row[2] || ''}</td>
+            <td>${row[3] || ''}</td>
+            <td>${row[4] || ''}</td>
+            <td>${row[5] || ''}</td>
+            <td>${row[6] || ''}</td>
+            <td>${row[7] || ''}</td>
+            <td>${row[8] || ''}</td>
+          </tr>`;
         });
 
-        const tableBody = document.getElementById('tableBody');
-        data.forEach(item => {
-          const row = document.createElement('tr');
-          headers.forEach(header => {
-            const td = document.createElement('td');
-            td.textContent = item[header];
-            row.appendChild(td);
-          });
-          tableBody.appendChild(row);
-        });
-      } catch (error) {
-        document.getElementById('message').textContent = 'Error fetching inventory data.';
+        table += '</table>';
+        document.getElementById('inventoryTable').innerHTML = table;
+      })
+      .catch(error => {
+        document.getElementById('error').textContent = 'Error fetching inventory data.';
         console.error(error);
-      }
-    }
-
-    fetchInventory();
+      });
   </script>
-
 </body>
 </html>
