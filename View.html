@@ -4,55 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Inventory Viewer</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #fff;
-    }
-    h2 {
-      text-align: center;
-    }
-    .error {
-      color: red;
-      text-align: center;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      padding: 8px;
-      border: 1px solid #ccc;
-      text-align: left;
-    }
-    th {
-      background-color: #4CAF50;
-      color: white;
-    }
-    #homeButton {
-      display: block;
-      margin: 30px auto 0;
-      padding: 10px 20px;
-      font-size: 16px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    #homeButton:hover {
-      background-color: #45a049;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
   <h2>Current Inventory</h2>
   <div id="error" class="error"></div>
   <div id="inventoryTable"></div>
 
-  <button id="homeButton" onclick="window.location.href='index.html'">Home</button>
+  <a href="index.html" class="home-button">Home</a>
 
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec?action=view';
@@ -60,8 +20,7 @@
     function formatDate(value) {
       if (!value) return '';
       const date = new Date(value);
-      if (isNaN(date)) return value;
-      return date.toLocaleDateString('en-GB'); // dd/mm/yyyy
+      return isNaN(date) ? value : date.toLocaleDateString('en-GB');
     }
 
     fetch(scriptURL)
@@ -69,7 +28,7 @@
       .then(data => {
         if (!Array.isArray(data)) throw new Error('Invalid data format');
 
-        let table = '<table><tr><th>ID</th><th>Item</th><th>Barcode</th><th>Quantity</th><th>Unit</th><th>Purchase Date</th><th>Expiry Date</th><th>Location</th><th>Notes</th></tr>';
+        let table = '<table class="inventory-table"><tr><th>ID</th><th>Item</th><th>Barcode</th><th>Quantity</th><th>Unit</th><th>Purchase Date</th><th>Expiry Date</th><th>Location</th><th>Notes</th></tr>';
 
         data.slice(1).forEach(row => {
           table += `<tr>
@@ -93,5 +52,6 @@
         console.error(error);
       });
   </script>
+
 </body>
 </html>
