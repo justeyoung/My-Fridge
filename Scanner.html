@@ -60,9 +60,7 @@
     document.getElementById("purchaseDate").valueAsDate = new Date();
 
     function checkFormValidity() {
-      const isItem = itemInput.value.trim() !== "";
-      const isQty = quantityInput.value.trim() !== "";
-      submitBtn.disabled = !(isItem && isQty);
+      submitBtn.disabled = !(itemInput.value.trim() && quantityInput.value.trim());
     }
 
     itemInput.addEventListener("input", checkFormValidity);
@@ -72,6 +70,7 @@
       e.preventDefault();
 
       const formData = new URLSearchParams({
+        action: "add",
         item: itemInput.value.trim(),
         quantity: quantityInput.value.trim(),
         unit: document.getElementById("unit").value.trim(),
@@ -85,16 +84,21 @@
       statusMessage.classList.remove("error");
 
       try {
-        const response = await fetch(scriptURL, { method: "POST", body: formData });
+        const response = await fetch(scriptURL, {
+          method: "POST",
+          body: formData
+        });
+
         const result = await response.text();
         statusMessage.textContent = result;
 
-        // Reset form
-        form.reset();
-        document.getElementById("purchaseDate").valueAsDate = new Date();
-        scannedBarcode = "";
-        barcodeDisplay.textContent = "(none)";
-        submitBtn.disabled = true;
+        if (result.toLowerCase().includes("success")) {
+          form.reset();
+          document.getElementById("purchaseDate").valueAsDate = new Date();
+          scannedBarcode = "";
+          barcodeDisplay.textContent = "(none)";
+          submitBtn.disabled = true;
+        }
 
         setTimeout(() => statusMessage.textContent = "", 5000);
       } catch (err) {
