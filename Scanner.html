@@ -1,96 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Scan Barcode</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Add Item to Fridge</title>
   <link rel="stylesheet" href="styles.css" />
-  <style>
-    #reader {
-      width: 100%;
-      max-width: 400px;
-      margin: 20px auto;
-      display: none;
-    }
-
-    .scanner-controls {
-      margin-top: 20px;
-      z-index: 2;
-      position: relative;
-    }
-
-    .green-btn, .home-btn {
-      margin: 10px;
-    }
-  </style>
 </head>
 <body>
-  <h2>Scan Barcode</h2>
+  <h2>Add Item to Fridge</h2>
 
-  <div class="scanner-controls">
-    <button class="green-btn" id="startBtn" type="button">Start Scanning</button>
-    <button class="green-btn" id="cancelBtn" type="button" disabled>Cancel Scan</button>
-    <button class="home-btn" type="button" onclick="location.href='index.html'">Home</button>
+  <!-- Scan Section -->
+  <div id="scanSection" style="display: none;">
+    <h3>Scan Barcode</h3>
+    <video id="preview" width="100%" style="max-width: 400px;"></video>
+    <br />
+    <button class="button-green" onclick="startScan()">Start Scanning</button>
+    <button class="button-green" onclick="cancelScan()">Cancel Scan</button>
+    <button class="button-dark" onclick="goHome()">Home</button>
   </div>
 
-  <div id="reader"></div>
+  <!-- Add Item Form -->
+  <form id="itemForm">
+    <button type="button" class="button-green" onclick="showScan()">Scan Barcode</button>
+    <div class="form-card">
+      <label>Item Name:</label>
+      <input type="text" id="itemName" required />
 
-  <script src="https://unpkg.com/html5-qrcode"></script>
+      <label>Quantity:</label>
+      <input type="number" id="quantity" min="1" value="1" required />
+
+      <label>Unit: <span class="optional">(optional)</span></label>
+      <input type="text" id="unit" />
+
+      <label>Purchase Date:</label>
+      <input type="date" id="purchaseDate" />
+
+      <label>Expiry Date: <span class="optional">(optional)</span></label>
+      <input type="date" id="expiryDate" />
+
+      <label>Location: <span class="optional">(optional)</span></label>
+      <select id="location">
+        <option value="">Select location</option>
+        <option value="Freezer (garage)">Freezer (garage)</option>
+        <option value="Freezer (dining room)">Freezer (dining room)</option>
+        <option value="Fridge (dining room)">Fridge (dining room)</option>
+        <option value="Fridge (kitchen)">Fridge (kitchen)</option>
+      </select>
+
+      <label>Scanned Barcode:</label>
+      <div id="scannedBarcode">(none)</div>
+
+      <button type="submit" class="button-green" id="submitBtn" disabled>Add Item</button>
+    </div>
+    <div id="statusMessage"></div>
+    <button type="button" class="button-dark" onclick="goHome()">Home</button>
+  </form>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
   <script>
-    const reader = new Html5Qrcode("reader");
-    let cameraId = null;
-    let scanning = false;
+    const form = document.getElementById("itemForm");
+    const itemName = document.getElementById("itemName");
+    const submitBtn = document.getElementById("submitBtn");
+    const statusMessage = document.getElementById("statusMessage");
+    const scanSection = document.getElementById("scanSection");
+    const preview = document.getElementById("preview");
+    const scannedBarcode = document.getElementById("scannedBarcode");
 
-    function onScanSuccess(decodedText) {
-      sessionStorage.setItem("barcode", decodedText);
-      stopScan(() => window.location.href = "add.html");
-    }
+    let scanner = null;
 
-    function startScan() {
-      Html5Qrcode.getCameras().then(devices => {
-        if (devices && devices.length) {
-          cameraId = devices[0].id;
-          reader.start(cameraId, { fps: 10, qrbox: 250 }, onScanSuccess)
-            .then(() => {
-              document.getElementById("reader").style.display = "block";
-              document.getElementById("cancelBtn").disabled = false;
-              scanning = true;
-            })
-            .catch(err => {
-              alert("Failed to start scanner: " + err);
-            });
-        } else {
-          alert("No camera found.");
-        }
-      }).catch(err => {
-        alert("Camera access error: " + err);
-      });
-    }
-
-    function stopScan(callback) {
-      if (scanning) {
-        reader.stop().then(() => {
-          document.getElementById("reader").style.display = "none";
-          document.getElementById("cancelBtn").disabled = true;
-          scanning = false;
-          if (callback) callback();
-        }).catch(err => {
-          console.warn("Failed to stop scanner:", err);
-          if (callback) callback();
-        });
-      } else if (callback) {
-        callback();
-      }
-    }
-
-    document.getElementById("startBtn").addEventListener("click", () => {
-      startScan();
+    // Enable submit only when item name is entered
+    itemName.addEventListener("input", () => {
+      submitBtn.disabled = itemName.value.trim() === "";
     });
 
-    document.getElementById("cancelBtn").addEventListener("click", () => {
-      stopScan(() => {
-        window.location.href = "add.html";
+    // Set today's date by default
+    document.getElementById("purchaseDate").valueAsDate = new Date();
+
+    // Show scan view
+    function showScan() {
+      document.getElementById("itemForm").style.display = "none";
+      scanSection.style.display = "block";
+    }
+
+    // Cancel scan
+    function cancelScan() {
+      scanSection.style.display = "none";
+      document.getElementById("itemForm").style.display = "block";
+      if (scanner) scanner.reset();
+    }
+
+    // Go Home
+    function goHome() {
+      window.location.href = "index.html";
+    }
+
+    // Start barcode scan
+    function startScan() {
+      scanner = new ZXing.BrowserBarcodeReader();
+      scanner.decodeOnceFromVideoDevice(undefined, preview).then(result => {
+        scannedBarcode.textContent = result.text;
+        cancelScan();
+      }).catch(err => {
+        scannedBarcode.textContent = "(scan failed)";
+        cancelScan();
       });
+    }
+
+    // Submit form
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const data = {
+        item: itemName.value.trim(),
+        quantity: document.getElementById("quantity").value,
+        unit: document.getElementById("unit").value,
+        purchaseDate: document.getElementById("purchaseDate").value,
+        expiryDate: document.getElementById("expiryDate").value,
+        location: document.getElementById("location").value,
+        barcode: scannedBarcode.textContent === "(none)" ? "" : scannedBarcode.textContent
+      };
+
+      try {
+        const query = new URLSearchParams(data).toString();
+        const res = await fetch(`https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec?${query}`);
+        const text = await res.text();
+
+        statusMessage.textContent = text;
+        setTimeout(() => statusMessage.textContent = "", 5000);
+
+        if (text.includes("successfully")) {
+          form.reset();
+          scannedBarcode.textContent = "(none)";
+          submitBtn.disabled = true;
+          document.getElementById("purchaseDate").valueAsDate = new Date(); // Reset purchase date
+        }
+      } catch (err) {
+        statusMessage.textContent = "Error adding item.";
+        setTimeout(() => statusMessage.textContent = "", 5000);
+      }
     });
   </script>
 </body>
