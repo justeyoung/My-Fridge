@@ -3,82 +3,200 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Derek’s Fridge</title>
-
-  <!-- PWA Support -->
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#4CAF50" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-
+  <title>Add Item - Derek’s Fridge</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
       font-family: sans-serif;
-      margin: 0;
       padding: 2rem;
-      text-align: center;
-      background: #f0f0f0;
+      background: #f4f4f4;
     }
 
-    h1 {
+    h2 {
+      text-align: center;
       color: #4CAF50;
-      margin-bottom: 2rem;
+    }
+
+    form {
+      max-width: 400px;
+      margin: auto;
+      background: #fff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.3rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
     }
 
     button {
-      display: block;
-      margin: 1rem auto;
-      padding: 1rem 2rem;
-      font-size: 1rem;
+      margin-top: 1.5rem;
+      padding: 0.7rem;
+      width: 100%;
       background-color: #4CAF50;
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 6px;
+      font-size: 1rem;
       cursor: pointer;
-      width: 80%;
-      max-width: 300px;
     }
 
-    #installBtn {
-      background-color: #333;
-      margin-top: 3rem;
+    #barcodeDisplay {
+      background: #eee;
+      padding: 0.5rem;
+      margin-top: 0.3rem;
+      border-radius: 5px;
+    }
+
+    #scanner {
+      display: none;
+      margin: 2rem auto;
+      max-width: 400px;
+    }
+
+    .scan-active #scanner {
+      display: block;
+    }
+
+    .scan-active form {
+      display: none;
+    }
+
+    #lookupStatus {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 0.5rem;
     }
   </style>
 </head>
 <body>
 
-  <h1>Derek’s Fridge</h1>
+  <h2>Add Item to Fridge</h2>
 
-  <button onclick="location.href='scanner.html'">Open Scanner</button>
-  <button onclick="location.href='view.html'">Inventory Viewer</button>
-  <button onclick="location.href='download.html'">Download Inventory (PDF)</button>
+  <button onclick="startScanner()">Scan Barcode</button>
 
-  <button id="installBtn" style="display:none;">Install App</button>
+  <div id="scanner"></div>
+
+  <form id="itemForm">
+    <label for="item">Item Name:</label>
+    <input type="text" id="item" name="item" required>
+    <div id="lookupStatus"></div>
+
+    <label for="quantity">Quantity:</label>
+    <input type="number" id="quantity" name="quantity" value="1" min="1" required>
+
+    <label for="unit">Unit: <span style="font-weight:normal;">(optional)</span></label>
+    <input type="text" id="unit" name="unit">
+
+    <label for="purchase">Purchase Date:</label>
+    <input type="date" id="purchase" name="purchaseDate">
+
+    <label for="expiry">Expiry Date: <span style="font-weight:normal;">(optional)</span></label>
+    <input type="date" id="expiry" name="expiryDate">
+
+    <label for="location">Location:</label>
+    <select id="location" name="location" required>
+      <option value="" disabled selected>Select location</option>
+      <option value="Fridge (kitchen)">Fridge (kitchen)</option>
+      <option value="Fridge (dining room)">Fridge (dining room)</option>
+      <option value="Freezer (garage)">Freezer (garage)</option>
+      <option value="Freezer (dining room)">Freezer (dining room)</option>
+    </select>
+
+    <label>Scanned Barcode:</label>
+    <div id="barcodeDisplay">(none)</div>
+    <input type="hidden" id="barcode" name="barcode">
+
+    <button type="submit">Add Item</button>
+  </form>
+
+  <div id="status" style="text-align: center; margin-top: 1rem;"></div>
 
   <script>
-    let deferredPrompt;
-    const installBtn = document.getElementById('installBtn');
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
+    const scannerDiv = document.getElementById("scanner");
+    const itemInput = document.getElementById("item");
+    const lookupStatus = document.getElementById("lookupStatus");
 
-    // Listen for install availability
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault(); // Prevent the default mini-infobar
-      deferredPrompt = e;
-      installBtn.style.display = 'block';
-    });
+    // Default Purchase Date to Today
+    document.getElementById("purchase").value = new Date().toISOString().split("T")[0];
 
-    installBtn.addEventListener('click', async () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const result = await deferredPrompt.userChoice;
-        if (result.outcome === 'accepted') {
-          console.log('User accepted the install prompt');
-        } else {
-          console.log('User dismissed the install prompt');
+    let html5QrCode;
+
+    function startScanner() {
+      document.body.classList.add("scan-active");
+      html5QrCode = new Html5Qrcode("scanner");
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          html5QrCode.start(
+            devices[0].id,
+            { fps: 10, qrbox: 250 },
+            (decodedText) => {
+              stopScanner();
+              document.getElementById("barcode").value = decodedText;
+              document.getElementById("barcodeDisplay").textContent = decodedText;
+              lookupProduct(decodedText);
+            },
+            () => {}
+          ).catch(err => {
+            console.error("QR Code scanner error:", err);
+            stopScanner();
+          });
         }
-        installBtn.style.display = 'none';
-        deferredPrompt = null;
-      }
+      });
+    }
+
+    function stopScanner() {
+      html5QrCode.stop().then(() => {
+        html5QrCode.clear();
+        document.body.classList.remove("scan-active");
+      }).catch(err => console.error("Failed to stop scanner:", err));
+    }
+
+    function lookupProduct(barcode) {
+      lookupStatus.textContent = "Looking up product...";
+      fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 1) {
+            const productName = data.product.product_name || data.product.generic_name || '';
+            itemInput.value = productName;
+            lookupStatus.textContent = `Found: ${productName}`;
+          } else {
+            lookupStatus.textContent = "No match found. You can enter the name manually.";
+          }
+        })
+        .catch(() => {
+          lookupStatus.textContent = "Error checking product.";
+        });
+    }
+
+    document.getElementById("itemForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+      fetch(scriptURL + '?' + new URLSearchParams(formData), { method: 'GET' })
+        .then(() => {
+          document.getElementById("status").textContent = "Item added successfully.";
+          form.reset();
+          document.getElementById("barcodeDisplay").textContent = "(none)";
+          lookupStatus.textContent = "";
+          document.getElementById("purchase").value = new Date().toISOString().split("T")[0];
+        })
+        .catch(() => {
+          document.getElementById("status").textContent = "Error adding item.";
+        });
     });
   </script>
 
