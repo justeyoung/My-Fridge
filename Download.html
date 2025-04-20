@@ -1,199 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Print Inventory by Location</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 2rem;
-      background: #f9f9f9;
-    }
-
-    .section {
-      background: #fff;
-      border: 1px solid #ddd;
-      padding: 1rem;
-      margin-bottom: 3rem;
-      border-radius: 6px;
-      box-shadow: 0 0 4px rgba(0, 0, 0, 0.05);
-    }
-
-    h2, h3 {
-      text-align: center;
-    }
-
-    button {
-      padding: 0.6rem 1.2rem;
-      font-size: 1rem;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin: 1rem auto 0;
-      display: block;
-    }
-
-    button:disabled {
-      background-color: #aaa;
-      cursor: not-allowed;
-    }
-
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 0.9rem;
-      margin-top: 1rem;
-    }
-
-    th, td {
-      border: 1px solid #ccc;
-      padding: 0.5rem;
-      text-align: left;
-    }
-
-    th {
-      background-color: #4CAF50;
-      color: white;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download Inventory</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
-
-  <h2>Print Inventory by Location</h2>
+  <h2>Download Inventory PDFs by Location</h2>
   <div id="pdfContainer"></div>
+  <a href="index.html" class="button home-button">Home</a>
 
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
 
-    function formatDate(isoString) {
-      if (!isoString) return '';
-      const date = new Date(isoString);
-      return isNaN(date) ? isoString : date.toLocaleDateString('en-GB');
-    }
-
-    function groupByLocation(data) {
-      return data.reduce((acc, row) => {
-        const loc = row.Location || 'Unknown';
-        acc[loc] = acc[loc] || [];
-        acc[loc].push(row);
-        return acc;
-      }, {});
-    }
-
-    async function loadInventory() {
-      try {
-        const res = await fetch(scriptURL);
-        let data = await res.json();
-
-        if (!data || !data.length) throw new Error('No inventory data found.');
-
-        data = data.map(row => ({
-          Location: row.Location || 'Unknown',
-          Item: row.Item,
-          Quantity: row.Quantity,
-          Unit: row.Unit,
-          'Expiry Date': formatDate(row['Expiry Date'])
-        }));
-
-        const grouped = groupByLocation(data);
-        const container = document.getElementById('pdfContainer');
-        const printButtons = [];
-
-        Object.entries(grouped).forEach(([location, items], index) => {
-          const section = document.createElement('div');
-          section.className = 'section';
-          section.id = `section-${index}`;
-
-          const heading = document.createElement('h3');
-          heading.textContent = `Inventory - ${location}`;
-          section.appendChild(heading);
-
-          const table = document.createElement('table');
-          const thead = document.createElement('thead');
-          const headerRow = document.createElement('tr');
-
-          ['#', 'Item', 'Quantity', 'Unit', 'Expiry Date'].forEach(header => {
-            const th = document.createElement('th');
-            th.textContent = header;
-            headerRow.appendChild(th);
-          });
-          thead.appendChild(headerRow);
-          table.appendChild(thead);
-
-          const tbody = document.createElement('tbody');
-          items.forEach((item, i) => {
-            const row = document.createElement('tr');
-            const sn = document.createElement('td');
-            sn.textContent = i + 1;
-            row.appendChild(sn);
-            ['Item', 'Quantity', 'Unit', 'Expiry Date'].forEach(field => {
-              const td = document.createElement('td');
-              td.textContent = item[field] || '';
-              row.appendChild(td);
-            });
-            tbody.appendChild(row);
-          });
-
-          table.appendChild(tbody);
-          section.appendChild(table);
-
-          const btn = document.createElement('button');
-          btn.textContent = 'Preparing...';
-          btn.disabled = true;
-
-          btn.addEventListener('click', () => {
-            const clone = section.cloneNode(true);
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-              <html>
-                <head>
-                  <title>Inventory - ${location}</title>
-                  <style>
-                    body { font-family: sans-serif; padding: 2rem; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; }
-                    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
-                    th { background-color: #4CAF50; color: white; }
-                    h3 { text-align: center; }
-                  </style>
-                </head>
-                <body>
-                  ${clone.outerHTML}
-                </body>
-              </html>
-            `);
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-            printWindow.onafterprint = () => printWindow.close();
-          });
-
-          section.appendChild(btn);
-          container.appendChild(section);
-          printButtons.push(btn);
-        });
-
-        // Enable buttons after 5 seconds
-        setTimeout(() => {
-          printButtons.forEach(btn => {
-            btn.disabled = false;
-            btn.textContent = 'Print PDF';
-          });
-        }, 5000);
-
-      } catch (err) {
-        const errMsg = document.createElement('p');
-        errMsg.textContent = 'Error loading inventory.';
-        errMsg.style.color = 'red';
-        document.body.appendChild(errMsg);
+    fetch(scriptURL)
+      .then(response => response.json())
+      .then(data => renderPDFSections(data))
+      .catch(err => {
+        document.body.innerHTML = '<p style="color:red;">Error loading data.</p>';
         console.error(err);
-      }
+      });
+
+    function renderPDFSections(data) {
+      const container = document.getElementById('pdfContainer');
+      const grouped = {};
+
+      data.forEach(row => {
+        const location = row[7] || 'Unknown';
+        if (!grouped[location]) grouped[location] = [];
+        grouped[location].push(row);
+      });
+
+      Object.entries(grouped).forEach(([location, items]) => {
+        const section = document.createElement('div');
+        section.innerHTML = `
+          <h3>Inventory - ${location}</h3>
+          <table class="inventory-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Item</th><th>Quantity</th><th>Unit</th><th>Expiry Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map((row, index) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>${row[1]}</td>
+                  <td>${row[3]}</td>
+                  <td>${row[4]}</td>
+                  <td>${formatDate(row[6])}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <button onclick="downloadPDF(this.previousElementSibling, '${location}')">Print PDF</button>
+        `;
+        container.appendChild(section);
+      });
     }
 
-    loadInventory();
-  </script>
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      return isNaN(date) ? '' : date.toLocaleDateString('en-GB');
+    }
 
+    function downloadPDF(table, location) {
+      const title = `Inventory - ${location}`;
+      const filename = `${location.replace(/\s+/g, '_')}_Inventory.pdf`;
+
+      const wrapper = document.createElement('div');
+      wrapper.style.padding = '20px';
+      wrapper.style.background = 'white';
+      wrapper.innerHTML = `<h2 style="text-align:center;">${title}</h2>` + table.outerHTML;
+
+      document.body.appendChild(wrapper);
+
+      html2canvas(wrapper).then(canvas => {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        const imgData = canvas.toDataURL('image/png');
+        const width = pdf.internal.pageSize.getWidth();
+        const height = canvas.height * width / canvas.width;
+        pdf.addImage(imgData, 'PNG', 0, 10, width, height);
+        pdf.save(filename);
+        document.body.removeChild(wrapper);
+      });
+    }
+  </script>
 </body>
 </html>
