@@ -107,7 +107,6 @@
         const grouped = groupByLocation(data);
         const container = document.getElementById('pdfContainer');
         const today = getTodaySuffix();
-
         const downloadButtons = [];
 
         Object.entries(grouped).forEach(([location, items], index) => {
@@ -154,14 +153,14 @@
 
           btn.addEventListener('click', () => {
             section.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            requestAnimationFrame(() => {
+            setTimeout(() => {
               html2pdf().from(section).set({
                 margin: 10,
                 filename: `Inventory_${location.replace(/\s+/g, '-')}_${today}.pdf`,
                 html2canvas: { scale: 2 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
               }).save();
-            });
+            }, 1000); // wait 1 second after scroll
           });
 
           section.appendChild(btn);
@@ -175,7 +174,7 @@
             btn.disabled = false;
             btn.textContent = 'Download PDF';
           });
-        }, 10000); // 10 seconds
+        }, 10000);
 
       } catch (err) {
         const errMsg = document.createElement('p');
