@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inventory Viewer - My Fridge</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2rem;
+      background: #f9f9f9;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    th, td {
+      padding: 0.8rem;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+
+    .message {
+      text-align: center;
+      margin-top: 1rem;
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Current Inventory</h2>
+
+  <div class="message" id="message"></div>
+  <table id="inventoryTable">
+    <thead>
+      <tr id="tableHeader"></tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <script>
+    async function fetchInventory() {
+      const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
+      try {
+        const response = await fetch(scriptURL);
+        const data = await response.json();
+
+        if (data.length === 0) {
+          document.getElementById('message').textContent = 'No inventory data available.';
+          return;
+        }
+
+        const headers = Object.keys(data[0]);
+        const headerRow = document.getElementById('tableHeader');
+        headers.forEach(header => {
+          const th = document.createElement('th');
+          th.textContent = header;
+          headerRow.appendChild(th);
+        });
+
+        const tableBody = document.getElementById('tableBody');
+        data.forEach(item => {
+          const row = document.createElement('tr');
+          headers.forEach(header => {
+            const td = document.createElement('td');
+            td.textContent = item[header];
+            row.appendChild(td);
+          });
+          tableBody.appendChild(row);
+        });
+      } catch (error) {
+        document.getElementById('message').textContent = 'Error fetching inventory data.';
+        console.error(error);
+      }
+    }
+
+    fetchInventory();
+  </script>
+
+</body>
+</html>
