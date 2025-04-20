@@ -11,12 +11,12 @@
 
   <button class="green-btn" onclick="startScan()">Scan Barcode</button>
 
-  <form id="addForm">
+  <form id="addForm" novalidate>
     <label for="itemName">Item Name:</label>
     <input type="text" id="itemName" required />
 
     <label for="quantity">Quantity:</label>
-    <input type="number" id="quantity" value="1" min="1" />
+    <input type="number" id="quantity" value="1" min="1" required />
 
     <label for="unit">Unit:</label>
     <input type="text" id="unit" />
@@ -39,7 +39,7 @@
     <label>Scanned Barcode:</label>
     <div id="scannedBarcodeDisplay">(none)</div>
 
-    <button class="green-btn" type="submit">Add Item</button>
+    <button class="green-btn" id="addBtn" type="submit" disabled>Add Item</button>
     <div id="statusMessage"></div>
     <button class="home-btn" type="button" onclick="location.href='index.html'">Home</button>
   </form>
@@ -49,6 +49,11 @@
     let scannedBarcodeValue = "";
 
     document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("addForm");
+      const statusMessage = document.getElementById("statusMessage");
+      const itemNameInput = document.getElementById("itemName");
+      const addBtn = document.getElementById("addBtn");
+
       document.getElementById("purchaseDate").valueAsDate = new Date();
 
       if (sessionStorage.getItem("barcode")) {
@@ -57,17 +62,23 @@
         sessionStorage.removeItem("barcode");
       }
 
-      document.getElementById("addForm").addEventListener("submit", function (event) {
-        event.preventDefault(); // prevent form reload
+      function validateForm() {
+        const item = itemNameInput.value.trim();
+        addBtn.disabled = item === "";
+      }
 
-        const item = document.getElementById("itemName").value.trim();
+      itemNameInput.addEventListener("input", validateForm);
+      validateForm(); // initial check
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const item = itemNameInput.value.trim();
         const quantity = document.getElementById("quantity").value;
         const unit = document.getElementById("unit").value.trim();
         const purchaseDate = document.getElementById("purchaseDate").value;
         const expiryDate = document.getElementById("expiryDate").value;
         const location = document.getElementById("location").value;
-        const barcode = scannedBarcodeValue;
-        const statusMessage = document.getElementById("statusMessage");
 
         if (!item) {
           statusMessage.textContent = "Item name is required.";
@@ -83,7 +94,7 @@
           purchaseDate,
           expiryDate,
           location,
-          barcode,
+          barcode: scannedBarcodeValue,
           notes: ""
         });
 
@@ -91,15 +102,16 @@
           method: "POST",
           body: formData
         })
-        .then(response => response.text())
+        .then(res => res.text())
         .then(result => {
           statusMessage.textContent = result;
           statusMessage.className = "success-message";
 
-          document.getElementById("addForm").reset();
+          form.reset();
           document.getElementById("purchaseDate").valueAsDate = new Date();
           scannedBarcodeValue = "";
           document.getElementById("scannedBarcodeDisplay").textContent = "(none)";
+          validateForm();
 
           setTimeout(() => {
             statusMessage.textContent = "";
