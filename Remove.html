@@ -2,123 +2,93 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Add Item to Fridge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Remove Item from Fridge</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h2>Add Item to Fridge</h2>
+  <h2 class="title">Remove Item from Fridge</h2>
 
-  <button class="green-btn" onclick="startScan()">Scan Barcode</button>
+  <form class="form-container" id="removeForm">
+    <button type="button" class="button small-button" onclick="startScanner()">Scan Barcode</button>
 
-  <form id="addForm">
-    <label for="itemName">Item Name:</label>
-    <input type="text" id="itemName" required />
+    <label for="item">Item Name:</label>
+    <input type="text" id="item" name="item" required />
 
-    <label for="quantity">Quantity:</label>
-    <input type="number" id="quantity" value="1" min="1" />
+    <label for="quantity">Quantity to Remove:</label>
+    <input type="number" id="quantity" name="quantity" value="1" min="1" required />
 
-    <label for="unit">Unit:</label>
-    <input type="text" id="unit" />
+    <label for="barcode">Scanned Barcode:</label>
+    <div id="scannedBarcode">(none)</div>
 
-    <label for="purchaseDate">Purchase Date:</label>
-    <input type="date" id="purchaseDate" />
+    <button type="submit" id="submitBtn" class="button primary-button" disabled>Remove Item</button>
+    <button type="button" class="button secondary-button" onclick="goHome()">Home</button>
 
-    <label for="expiryDate">Expiry Date:</label>
-    <input type="date" id="expiryDate" />
-
-    <label for="location">Location:</label>
-    <select id="location">
-      <option value="">Select location</option>
-      <option value="Freezer (garage)">Freezer (garage)</option>
-      <option value="Freezer (dining room)">Freezer (dining room)</option>
-      <option value="Fridge (dining room)">Fridge (dining room)</option>
-      <option value="Fridge (kitchen)">Fridge (kitchen)</option>
-    </select>
-
-    <label>Scanned Barcode:</label>
-    <div id="scannedBarcodeDisplay">(none)</div>
-
-    <button class="green-btn" type="submit">Add Item</button>
-    <div id="statusMessage"></div>
-    <button class="home-btn" type="button" onclick="location.href='index.html'">Home</button>
+    <p id="statusMessage" class="status-message"></p>
   </form>
 
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
-    let scannedBarcodeValue = "";
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec";
 
-    document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("purchaseDate").valueAsDate = new Date();
+    let scannedBarcode = "";
 
-      if (sessionStorage.getItem("barcode")) {
-        scannedBarcodeValue = sessionStorage.getItem("barcode");
-        document.getElementById("scannedBarcodeDisplay").textContent = scannedBarcodeValue;
-        sessionStorage.removeItem("barcode");
-      }
+    const form = document.getElementById("removeForm");
+    const itemInput = document.getElementById("item");
+    const quantityInput = document.getElementById("quantity");
+    const submitBtn = document.getElementById("submitBtn");
+    const barcodeDisplay = document.getElementById("scannedBarcode");
+    const statusMessage = document.getElementById("statusMessage");
 
-      document.getElementById("addForm").addEventListener("submit", function (event) {
-        event.preventDefault(); // prevent form reload
+    function checkFormValidity() {
+      submitBtn.disabled = !(itemInput.value.trim() && quantityInput.value.trim());
+    }
 
-        const item = document.getElementById("itemName").value.trim();
-        const quantity = document.getElementById("quantity").value;
-        const unit = document.getElementById("unit").value.trim();
-        const purchaseDate = document.getElementById("purchaseDate").value;
-        const expiryDate = document.getElementById("expiryDate").value;
-        const location = document.getElementById("location").value;
-        const barcode = scannedBarcodeValue;
-        const statusMessage = document.getElementById("statusMessage");
+    itemInput.addEventListener("input", checkFormValidity);
+    quantityInput.addEventListener("input", checkFormValidity);
 
-        if (!item) {
-          statusMessage.textContent = "Item name is required.";
-          statusMessage.className = "error-message";
-          return;
-        }
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
 
-        const formData = new URLSearchParams({
-          action: "add",
-          item,
-          quantity,
-          unit,
-          purchaseDate,
-          expiryDate,
-          location,
-          barcode,
-          notes: ""
-        });
+      const formData = new URLSearchParams({
+        action: "remove",
+        item: itemInput.value.trim(),
+        quantity: quantityInput.value.trim(),
+        barcode: scannedBarcode
+      });
 
-        fetch(scriptURL, {
+      statusMessage.textContent = "Removing item...";
+      statusMessage.classList.remove("error");
+
+      try {
+        const response = await fetch(scriptURL, {
           method: "POST",
           body: formData
-        })
-        .then(response => response.text())
-        .then(result => {
-          statusMessage.textContent = result;
-          statusMessage.className = "success-message";
-
-          document.getElementById("addForm").reset();
-          document.getElementById("purchaseDate").valueAsDate = new Date();
-          scannedBarcodeValue = "";
-          document.getElementById("scannedBarcodeDisplay").textContent = "(none)";
-
-          setTimeout(() => {
-            statusMessage.textContent = "";
-            statusMessage.className = "";
-          }, 5000);
-        })
-        .catch(() => {
-          statusMessage.textContent = "Error adding item.";
-          statusMessage.className = "error-message";
-          setTimeout(() => {
-            statusMessage.textContent = "";
-            statusMessage.className = "";
-          }, 5000);
         });
-      });
+
+        const result = await response.text();
+        statusMessage.textContent = result;
+
+        if (result.toLowerCase().includes("success")) {
+          form.reset();
+          scannedBarcode = "";
+          barcodeDisplay.textContent = "(none)";
+          submitBtn.disabled = true;
+        }
+
+        setTimeout(() => statusMessage.textContent = "", 5000);
+      } catch (err) {
+        statusMessage.textContent = "Error removing item.";
+        statusMessage.classList.add("error");
+        setTimeout(() => statusMessage.textContent = "", 5000);
+      }
     });
 
-    function startScan() {
+    function startScanner() {
       window.location.href = "scan.html";
+    }
+
+    function goHome() {
+      window.location.href = "index.html";
     }
   </script>
 </body>
