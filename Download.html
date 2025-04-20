@@ -29,7 +29,7 @@
     }
 
     table {
-      margin-top: 2rem;
+      margin-top: 1rem;
       border-collapse: collapse;
       width: 100%;
       font-size: 0.9rem;
@@ -46,10 +46,11 @@
       color: white;
     }
 
+    /* Visibly hidden but still rendered */
     #inventoryContent {
-      visibility: hidden;
+      opacity: 0;
       position: absolute;
-      left: -9999px;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -71,43 +72,54 @@
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
 
-    async function fetchInventory() {
-      const response = await fetch(scriptURL);
-      const data = await response.json();
+    function fetchInventory() {
+      return fetch(scriptURL)
+        .then(res => res.json())
+        .then(data => {
+          const headerRow = document.getElementById('tableHeader');
+          const tableBody = document.getElementById('tableBody');
+          headerRow.innerHTML = '';
+          tableBody.innerHTML = '';
 
-      const headerRow = document.getElementById('tableHeader');
-      const tableBody = document.getElementById('tableBody');
-      headerRow.innerHTML = '';
-      tableBody.innerHTML = '';
+          if (!data.length) throw new Error('No data');
 
-      if (data.length === 0) return;
+          const headers = Object.keys(data[0]);
+          headers.forEach(header => {
+            const th = document.createElement('th');
+            th.textContent = header;
+            headerRow.appendChild(th);
+          });
 
-      const headers = Object.keys(data[0]);
-      headers.forEach(header => {
-        const th = document.createElement('th');
-        th.textContent = header;
-        headerRow.appendChild(th);
-      });
-
-      data.forEach(item => {
-        const row = document.createElement('tr');
-        headers.forEach(header => {
-          const td = document.createElement('td');
-          td.textContent = item[header];
-          row.appendChild(td);
+          data.forEach(item => {
+            const row = document.createElement('tr');
+            headers.forEach(header => {
+              const td = document.createElement('td');
+              td.textContent = item[header];
+              row.appendChild(td);
+            });
+            tableBody.appendChild(row);
+          });
         });
-        tableBody.appendChild(row);
-      });
     }
 
     async function generatePDF() {
-      await fetchInventory();
+      try {
+        await fetchInventory();
 
-      // Wait briefly for DOM to render
-      setTimeout(() => {
-        const element = document.getElementById('inventoryContent');
-        html2pdf().from(element).save('MyFridgeInventory.pdf');
-      }, 300); // 300ms delay for rendering
+        // Let the browser complete rendering before PDF export
+        requestAnimationFrame(() => {
+          const element = document.getElementById('inventoryContent');
+          html2pdf().from(element).set({
+            margin: 10,
+            filename: 'MyFridgeInventory.pdf',
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          }).save();
+        });
+      } catch (err) {
+        alert('Unable to generate PDF: ' + err.message);
+        console.error(err);
+      }
     }
   </script>
 
