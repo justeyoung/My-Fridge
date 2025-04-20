@@ -58,21 +58,6 @@
       background-color: #4CAF50;
       color: white;
     }
-
-    @media print {
-      body * {
-        visibility: hidden;
-      }
-      .print-target, .print-target * {
-        visibility: visible;
-      }
-      .print-target {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-      }
-    }
   </style>
 </head>
 <body>
@@ -160,10 +145,20 @@
           btn.disabled = true;
 
           btn.addEventListener('click', () => {
-            // Temporarily add print-target class for printing
-            section.classList.add('print-target');
+            const originalBody = document.body.cloneNode(true);
+            const printWindow = document.createElement('div');
+            printWindow.innerHTML = '';
+            const clone = section.cloneNode(true);
+
+            document.body.innerHTML = '';
+            document.body.appendChild(clone);
             window.print();
-            setTimeout(() => section.classList.remove('print-target'), 1000);
+
+            setTimeout(() => {
+              document.body.innerHTML = '';
+              document.body.appendChild(originalBody);
+              loadInventory(); // reload buttons and content
+            }, 500);
           });
 
           section.appendChild(btn);
@@ -177,7 +172,7 @@
             btn.disabled = false;
             btn.textContent = 'Print PDF';
           });
-        }, 5000); // 5 seconds
+        }, 5000);
 
       } catch (err) {
         const errMsg = document.createElement('p');
