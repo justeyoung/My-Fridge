@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Download Inventory PDF - My Fridge</title>
+  <title>Download Inventory PDFs - My Fridge</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     body {
@@ -29,11 +29,15 @@
       cursor: not-allowed;
     }
 
+    .pdf-section {
+      display: none;
+    }
+
     table {
-      margin: 2rem auto;
       border-collapse: collapse;
-      width: 90%;
+      width: 100%;
       font-size: 0.9rem;
+      margin-top: 1rem;
     }
 
     th, td {
@@ -46,22 +50,18 @@
       background-color: #4CAF50;
       color: white;
     }
+
+    h3 {
+      margin-top: 2rem;
+    }
   </style>
 </head>
 <body>
 
-  <h2>Download Your Inventory as PDF</h2>
+  <h2>Download Inventory PDFs by Location</h2>
   <button id="downloadBtn" disabled>Loading Inventory...</button>
 
-  <div id="inventoryContent">
-    <h3>My Fridge Inventory</h3>
-    <table id="inventoryTable">
-      <thead>
-        <tr id="tableHeader"></tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-  </div>
+  <div id="pdfContainer"></div>
 
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
@@ -74,23 +74,24 @@
       return date.toLocaleDateString('en-GB');
     }
 
-    function sortByLocation(data) {
-      return data.sort((a, b) => {
-        const locA = (a.Location || '').toLowerCase();
-        const locB = (b.Location || '').toLowerCase();
-        return locA.localeCompare(locB);
-      });
+    function groupByLocation(data) {
+      return data.reduce((groups, item) => {
+        const loc = item.Location || 'Unknown';
+        if (!groups[loc]) groups[loc] = [];
+        groups[loc].push(item);
+        return groups;
+      }, {});
     }
 
-    function getTodayFilename() {
+    function getTodayString() {
       const now = new Date();
       const dd = String(now.getDate()).padStart(2, '0');
       const mm = String(now.getMonth() + 1).padStart(2, '0');
       const yyyy = now.getFullYear();
-      return `MyFridgeInventory_${dd}-${mm}-${yyyy}.pdf`;
+      return `${dd}-${mm}-${yyyy}`;
     }
 
-    async function loadAndRenderInventory() {
+    async function loadAndRender() {
       try {
         const response = await fetch(scriptURL);
         let data = await response.json();
@@ -100,46 +101,76 @@
           return;
         }
 
-        // Sort by location
-        data = sortByLocation(data);
-
-        // Format dates
+        // Format dates and filter columns
         data = data.map(row => ({
-          ...row,
-          'Purchase Date': formatDate(row['Purchase Date']),
-          'Expiry Date': formatDate(row['Expiry Date'])
+          Location: row.Location || 'Unknown',
+          Item: row.Item,
+          Quantity: row.Quantity,
+          Unit: row.Unit,
+          'Expiry Date': formatDate(row['Expiry Date']),
         }));
 
-        const headers = Object.keys(data[0]);
-        const headerRow = document.getElementById('tableHeader');
-        const tableBody = document.getElementById('tableBody');
+        const grouped = groupByLocation(data);
+        const container = document.getElementById('pdfContainer');
 
-        headers.forEach(header => {
-          const th = document.createElement('th');
-          th.textContent = header;
-          headerRow.appendChild(th);
-        });
+        for (const [location, items] of Object.entries(grouped)) {
+          const section = document.createElement('div');
+          section.className = 'pdf-section';
 
-        data.forEach(item => {
-          const row = document.createElement('tr');
-          headers.forEach(header => {
-            const td = document.createElement('td');
-            td.textContent = item[header];
-            row.appendChild(td);
+          const title = document.createElement('h3');
+          title.textContent = `Inventory - ${location}`;
+          section.appendChild(title);
+
+          const table = document.createElement('table');
+          const thead = document.createElement('thead');
+          const headerRow = document.createElement('tr');
+
+          ['#', 'Item', 'Quantity', 'Unit', 'Expiry Date'].forEach(header => {
+            const th = document.createElement('th');
+            th.textContent = header;
+            headerRow.appendChild(th);
           });
-          tableBody.appendChild(row);
-        });
+          thead.appendChild(headerRow);
+          table.appendChild(thead);
 
-        downloadBtn.textContent = 'Download PDF';
+          const tbody = document.createElement('tbody');
+          items.forEach((item, index) => {
+            const row = document.createElement('tr');
+
+            const tdNum = document.createElement('td');
+            tdNum.textContent = index + 1;
+            row.appendChild(tdNum);
+
+            ['Item', 'Quantity', 'Unit', 'Expiry Date'].forEach(field => {
+              const td = document.createElement('td');
+              td.textContent = item[field] || '';
+              row.appendChild(td);
+            });
+
+            tbody.appendChild(row);
+          });
+
+          table.appendChild(tbody);
+          section.appendChild(table);
+          container.appendChild(section);
+        }
+
+        downloadBtn.textContent = 'Download All PDFs';
         downloadBtn.disabled = false;
-        downloadBtn.onclick = () => {
-          const element = document.getElementById('inventoryContent');
-          html2pdf().from(element).set({
-            margin: 10,
-            filename: getTodayFilename(),
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-          }).save();
+
+        downloadBtn.onclick = async () => {
+          const today = getTodayString();
+          const sections = document.querySelectorAll('.pdf-section');
+
+          for (const section of sections) {
+            const locationName = section.querySelector('h3').textContent.replace('Inventory - ', '').replace(/\s+/g, '-');
+            await html2pdf().from(section).set({
+              margin: 10,
+              filename: `Inventory_${locationName}_${today}.pdf`,
+              html2canvas: { scale: 2 },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).save();
+          }
         };
       } catch (err) {
         downloadBtn.textContent = 'Error loading data';
@@ -147,7 +178,7 @@
       }
     }
 
-    loadAndRenderInventory();
+    loadAndRender();
   </script>
 
 </body>
