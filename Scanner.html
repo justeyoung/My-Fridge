@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Add Item - Derek’s Fridge</title>
+  <title>Add Item</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
 
-  <h2>Add Item to Fridge</h2>
+  <h2>Add Item</h2>
 
-  <button type="button" class="green-btn" onclick="startScanner()">Scan Barcode</button>
+  <button class="green-btn" onclick="startScanner()">Scan Barcode</button>
   <div id="scanner" style="display:none;"></div>
-  <button type="button" id="flipCameraBtn" class="green-btn" style="display:none;" onclick="flipCamera()">Flip Camera</button>
-  <button type="button" id="cancelScanBtn" class="green-btn" style="display:none;" onclick="cancelScan()">Cancel Scan</button>
+  <button id="flipCameraBtn" class="green-btn" style="display:none;" onclick="flipCamera()">Flip Camera</button>
+  <button id="cancelScanBtn" class="green-btn" style="display:none;" onclick="cancelScan()">Cancel Scan</button>
 
   <form id="itemForm">
     <label for="item">Item Name:</label>
@@ -56,19 +56,17 @@
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
     const itemInput = document.getElementById("item");
     const lookupStatus = document.getElementById("lookupStatus");
-    const cancelBtn = document.getElementById("cancelScanBtn");
-    const flipBtn = document.getElementById("flipCameraBtn");
-
-    document.getElementById("purchase").value = new Date().toISOString().split("T")[0];
 
     let html5QrCode;
     let currentCameraIndex = 0;
     let cameras = [];
 
+    document.getElementById("purchase").value = new Date().toISOString().split("T")[0];
+
     function startScanner() {
       document.getElementById("scanner").style.display = "block";
-      cancelBtn.style.display = "inline-block";
-      flipBtn.style.display = "inline-block";
+      document.getElementById("flipCameraBtn").style.display = "inline-block";
+      document.getElementById("cancelScanBtn").style.display = "inline-block";
 
       Html5Qrcode.getCameras().then(devices => {
         cameras = devices;
@@ -105,8 +103,8 @@
         html5QrCode.stop().then(() => {
           html5QrCode.clear();
           document.getElementById("scanner").style.display = "none";
-          cancelBtn.style.display = "none";
-          flipBtn.style.display = "none";
+          document.getElementById("flipCameraBtn").style.display = "none";
+          document.getElementById("cancelScanBtn").style.display = "none";
         });
       }
     }
@@ -115,8 +113,8 @@
       html5QrCode.stop().then(() => {
         html5QrCode.clear();
         document.getElementById("scanner").style.display = "none";
-        cancelBtn.style.display = "none";
-        flipBtn.style.display = "none";
+        document.getElementById("flipCameraBtn").style.display = "none";
+        document.getElementById("cancelScanBtn").style.display = "none";
       });
     }
 
