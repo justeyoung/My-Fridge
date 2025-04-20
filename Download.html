@@ -145,20 +145,17 @@
           btn.disabled = true;
 
           btn.addEventListener('click', () => {
-            const originalBody = document.body.cloneNode(true);
-            const printWindow = document.createElement('div');
-            printWindow.innerHTML = '';
+            const original = document.body.cloneNode(true);
             const clone = section.cloneNode(true);
-
             document.body.innerHTML = '';
             document.body.appendChild(clone);
+
+            // Print, then reload to restore all state
             window.print();
 
             setTimeout(() => {
-              document.body.innerHTML = '';
-              document.body.appendChild(originalBody);
-              loadInventory(); // reload buttons and content
-            }, 500);
+              location.reload();
+            }, 500); // ensures full reload after print or cancel
           });
 
           section.appendChild(btn);
