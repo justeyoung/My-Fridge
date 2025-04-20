@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Download Inventory PDFs - My Fridge</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <title>Print Inventory by Location</title>
   <style>
     body {
       font-family: sans-serif;
@@ -59,11 +58,26 @@
       background-color: #4CAF50;
       color: white;
     }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      .print-target, .print-target * {
+        visibility: visible;
+      }
+      .print-target {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
 
-  <h2>Download Inventory PDFs by Location</h2>
+  <h2>Print Inventory by Location</h2>
   <div id="pdfContainer"></div>
 
   <script>
@@ -73,11 +87,6 @@
       if (!isoString) return '';
       const date = new Date(isoString);
       return isNaN(date) ? isoString : date.toLocaleDateString('en-GB');
-    }
-
-    function getTodaySuffix() {
-      const d = new Date();
-      return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
     }
 
     function groupByLocation(data) {
@@ -106,8 +115,7 @@
 
         const grouped = groupByLocation(data);
         const container = document.getElementById('pdfContainer');
-        const today = getTodaySuffix();
-        const downloadButtons = [];
+        const printButtons = [];
 
         Object.entries(grouped).forEach(([location, items], index) => {
           const section = document.createElement('div');
@@ -152,29 +160,24 @@
           btn.disabled = true;
 
           btn.addEventListener('click', () => {
-            section.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            setTimeout(() => {
-              html2pdf().from(section).set({
-                margin: 10,
-                filename: `Inventory_${location.replace(/\s+/g, '-')}_${today}.pdf`,
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-              }).save();
-            }, 2000); // wait 2 seconds after scroll
+            // Temporarily add print-target class for printing
+            section.classList.add('print-target');
+            window.print();
+            setTimeout(() => section.classList.remove('print-target'), 1000);
           });
 
           section.appendChild(btn);
           container.appendChild(section);
-          downloadButtons.push(btn);
+          printButtons.push(btn);
         });
 
-        // Enable buttons after 20 seconds
+        // Enable buttons after 5 seconds
         setTimeout(() => {
-          downloadButtons.forEach(btn => {
+          printButtons.forEach(btn => {
             btn.disabled = false;
-            btn.textContent = 'Download PDF';
+            btn.textContent = 'Print PDF';
           });
-        }, 20000); // 20 sec
+        }, 5000); // 5 seconds
 
       } catch (err) {
         const errMsg = document.createElement('p');
