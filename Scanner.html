@@ -40,10 +40,12 @@
       border: 1px solid #ccc;
     }
 
-    button {
-      margin-top: 1.5rem;
+    .green-btn {
+      display: block;
+      margin: 1rem auto;
       padding: 0.7rem;
       width: 100%;
+      max-width: 400px;
       background-color: #4CAF50;
       color: white;
       border: none;
@@ -78,13 +80,18 @@
       color: #666;
       margin-top: 0.5rem;
     }
+
+    #status {
+      text-align: center;
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body>
 
   <h2>Add Item to Fridge</h2>
 
-  <button onclick="startScanner()">Scan Barcode</button>
+  <button type="button" class="green-btn" onclick="startScanner()">Scan Barcode</button>
 
   <div id="scanner"></div>
 
@@ -107,7 +114,7 @@
 
     <label for="location">Location: <span style="font-weight:normal;">(optional)</span></label>
     <select id="location" name="location">
-      <option value="">—</option>
+      <option value="">Select location</option>
       <option value="Fridge (kitchen)">Fridge (kitchen)</option>
       <option value="Fridge (dining room)">Fridge (dining room)</option>
       <option value="Freezer (garage)">Freezer (garage)</option>
@@ -118,17 +125,17 @@
     <div id="barcodeDisplay">(none)</div>
     <input type="hidden" id="barcode" name="barcode">
 
-    <button type="submit">Add Item</button>
+    <button type="submit" class="green-btn">Add Item</button>
   </form>
 
-  <div id="status" style="text-align: center; margin-top: 1rem;"></div>
+  <div id="status"></div>
 
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
     const itemInput = document.getElementById("item");
     const lookupStatus = document.getElementById("lookupStatus");
 
-    // Set default purchase date to today
+    // Set today's date by default
     document.getElementById("purchase").value = new Date().toISOString().split("T")[0];
 
     let html5QrCode;
