@@ -67,11 +67,18 @@
       max-width: 400px;
     }
 
-    .scan-active #scanner {
+    .scan-active #scanner,
+    .scan-active #cancelScanBtn,
+    .scan-active #flipCameraBtn {
       display: block;
     }
 
     .scan-active form {
+      display: none;
+    }
+
+    #cancelScanBtn,
+    #flipCameraBtn {
       display: none;
     }
 
@@ -92,8 +99,9 @@
   <h2>Add Item to Fridge</h2>
 
   <button type="button" class="green-btn" onclick="startScanner()">Scan Barcode</button>
-
   <div id="scanner"></div>
+  <button type="button" id="flipCameraBtn" class="green-btn" onclick="flipCamera()">Flip Camera</button>
+  <button type="button" id="cancelScanBtn" class="green-btn" onclick="cancelScan()">Cancel Scan</button>
 
   <form id="itemForm">
     <label for="item">Item Name:</label>
@@ -134,39 +142,67 @@
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
     const itemInput = document.getElementById("item");
     const lookupStatus = document.getElementById("lookupStatus");
-
-    // Set today's date by default
-    document.getElementById("purchase").value = new Date().toISOString().split("T")[0];
-
+    const cancelBtn = document.getElementById("cancelScanBtn");
+    const flipBtn = document.getElementById("flipCameraBtn");
     let html5QrCode;
+    let currentCameraIndex = 0;
+    let cameras = [];
+
+    document.getElementById("purchase").value = new Date().toISOString().split("T")[0];
 
     function startScanner() {
       document.body.classList.add("scan-active");
-      html5QrCode = new Html5Qrcode("scanner");
+      cancelBtn.style.display = "block";
+      flipBtn.style.display = "block";
+
       Html5Qrcode.getCameras().then(devices => {
-        if (devices && devices.length) {
+        cameras = devices;
+        if (cameras.length > 0) {
+          const cameraId = cameras[currentCameraIndex].id;
+          html5QrCode = new Html5Qrcode("scanner");
           html5QrCode.start(
-            devices[0].id,
+            cameraId,
             { fps: 10, qrbox: 250 },
             (decodedText) => {
               stopScanner();
               document.getElementById("barcode").value = decodedText;
               document.getElementById("barcodeDisplay").textContent = decodedText;
               lookupProduct(decodedText);
-            },
-            () => {}
+            }
           ).catch(err => {
-            console.error("Scanner error:", err);
+            console.error("Scanner start error:", err);
             stopScanner();
           });
         }
       });
     }
 
+    function flipCamera() {
+      if (cameras.length < 2) return;
+      currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+      html5QrCode.stop().then(() => {
+        html5QrCode.clear();
+        startScanner(); // restarts with new camera index
+      });
+    }
+
+    function cancelScan() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+          document.body.classList.remove("scan-active");
+          cancelBtn.style.display = "none";
+          flipBtn.style.display = "none";
+        }).catch(err => console.error("Error stopping scanner:", err));
+      }
+    }
+
     function stopScanner() {
       html5QrCode.stop().then(() => {
         html5QrCode.clear();
         document.body.classList.remove("scan-active");
+        cancelBtn.style.display = "none";
+        flipBtn.style.display = "none";
       }).catch(err => console.error("Stop scanner error:", err));
     }
 
