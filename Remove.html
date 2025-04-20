@@ -2,89 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Remove Item - Derek’s Fridge</title>
+  <link rel="stylesheet" href="styles.css">
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 2rem;
-      background: #f4f4f4;
-    }
-    h2 {
-      text-align: center;
-      color: #f44336;
-    }
-    form {
-      max-width: 400px;
-      margin: auto;
-      background: #fff;
-      padding: 1.5rem;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    label {
-      display: block;
-      margin-top: 1rem;
-      font-weight: bold;
-    }
-    input, select {
-      width: 100%;
-      padding: 0.5rem;
-      margin-top: 0.3rem;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    .red-btn {
-      display: block;
-      margin: 1rem auto;
-      padding: 0.7rem;
-      width: 100%;
-      max-width: 400px;
-      background-color: #f44336;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-    #scanner {
-      display: none;
-      margin: 2rem auto;
-      max-width: 400px;
-    }
-    .scan-active #scanner,
-    .scan-active #cancelScanBtn,
-    .scan-active #flipCameraBtn {
-      display: block;
-    }
-    .scan-active form {
-      display: none;
-    }
-    #cancelScanBtn, #flipCameraBtn {
-      display: none;
-    }
-    #barcodeDisplay {
-      background: #eee;
-      padding: 0.5rem;
-      margin-top: 0.3rem;
-      border-radius: 5px;
-    }
-    #status {
-      text-align: center;
-      margin-top: 1rem;
-      color: green;
-    }
-  </style>
 </head>
 <body>
 
   <h2>Remove Item from Fridge</h2>
 
   <button type="button" class="red-btn" onclick="startScanner()">Scan Barcode</button>
-  <div id="scanner"></div>
-  <button type="button" id="flipCameraBtn" class="red-btn" onclick="flipCamera()">Flip Camera</button>
-  <button type="button" id="cancelScanBtn" class="red-btn" onclick="cancelScan()">Cancel Scan</button>
+  <div id="scanner" style="display:none;"></div>
+  <button type="button" id="flipCameraBtn" class="red-btn" style="display:none;" onclick="flipCamera()">Flip Camera</button>
+  <button type="button" id="cancelScanBtn" class="red-btn" style="display:none;" onclick="cancelScan()">Cancel Scan</button>
 
   <form id="removeForm">
     <input type="hidden" name="remove" value="true">
@@ -112,26 +42,27 @@
   </form>
 
   <div id="status"></div>
+  <a href="index.html" class="home-button">Home</a>
 
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
+    const barcodeDisplay = document.getElementById("barcodeDisplay");
     const cancelBtn = document.getElementById("cancelScanBtn");
     const flipBtn = document.getElementById("flipCameraBtn");
-    const barcodeDisplay = document.getElementById("barcodeDisplay");
     let html5QrCode;
     let currentCameraIndex = 0;
     let cameras = [];
 
     function startScanner() {
-      document.body.classList.add("scan-active");
-      cancelBtn.style.display = "block";
-      flipBtn.style.display = "block";
+      document.getElementById("scanner").style.display = "block";
+      cancelBtn.style.display = "inline-block";
+      flipBtn.style.display = "inline-block";
 
       Html5Qrcode.getCameras().then(devices => {
         cameras = devices;
         if (cameras.length > 0) {
           const cameraId = cameras[currentCameraIndex].id;
-          html5QrCode = new Html5QrCode("scanner");
+          html5QrCode = new Html5Qrcode("scanner");
           html5QrCode.start(
             cameraId,
             { fps: 10, qrbox: 250 },
@@ -161,7 +92,7 @@
       if (html5QrCode) {
         html5QrCode.stop().then(() => {
           html5QrCode.clear();
-          document.body.classList.remove("scan-active");
+          document.getElementById("scanner").style.display = "none";
           cancelBtn.style.display = "none";
           flipBtn.style.display = "none";
         }).catch(err => console.error("Stop error:", err));
@@ -171,7 +102,7 @@
     function stopScanner() {
       html5QrCode.stop().then(() => {
         html5QrCode.clear();
-        document.body.classList.remove("scan-active");
+        document.getElementById("scanner").style.display = "none";
         cancelBtn.style.display = "none";
         flipBtn.style.display = "none";
       }).catch(err => console.error("Stop scanner error:", err));
@@ -195,6 +126,5 @@
         });
     });
   </script>
-
 </body>
 </html>
