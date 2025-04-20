@@ -2,129 +2,78 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Remove Item - Derek’s Fridge</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Remove Item from Fridge</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-
   <h2>Remove Item from Fridge</h2>
 
-  <button type="button" class="red-btn" onclick="startScanner()">Scan Barcode</button>
-  <div id="scanner" style="display:none;"></div>
-  <button type="button" id="flipCameraBtn" class="red-btn" style="display:none;" onclick="flipCamera()">Flip Camera</button>
-  <button type="button" id="cancelScanBtn" class="red-btn" style="display:none;" onclick="cancelScan()">Cancel Scan</button>
-
-  <form id="removeForm">
-    <input type="hidden" name="remove" value="true">
-
-    <label for="item">Item Name:</label>
-    <input type="text" id="item" name="item">
+  <div class="form-container">
+    <label for="itemName">Item Name:</label>
+    <input type="text" id="itemName" required />
 
     <label for="quantity">Quantity to Remove:</label>
-    <input type="number" id="quantity" name="quantity" value="1" min="1" required>
+    <input type="number" id="quantity" value="1" min="1" />
 
-    <label for="location">Location: <span style="font-weight:normal;">(optional)</span></label>
-    <select id="location" name="location">
+    <label for="unit">Unit:</label>
+    <input type="text" id="unit" />
+
+    <label for="location">Location:</label>
+    <select id="location">
       <option value="">Select location</option>
-      <option value="Fridge (kitchen)">Fridge (kitchen)</option>
-      <option value="Fridge (dining room)">Fridge (dining room)</option>
       <option value="Freezer (garage)">Freezer (garage)</option>
       <option value="Freezer (dining room)">Freezer (dining room)</option>
+      <option value="Fridge (dining room)">Fridge (dining room)</option>
+      <option value="Fridge (kitchen)">Fridge (kitchen)</option>
     </select>
 
-    <label>Scanned Barcode:</label>
-    <div id="barcodeDisplay">(none)</div>
-    <input type="hidden" id="barcode" name="barcode">
-
-    <button type="submit" class="red-btn">Remove Item</button>
-  </form>
-
-  <div id="status"></div>
-  <a href="index.html" class="home-button">Home</a>
+    <button class="remove-button" onclick="submitRemove()">Remove Item</button>
+    <div id="statusMessage"></div>
+    <button class="home-button" onclick="location.href='index.html'">Home</button>
+  </div>
 
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
-    const barcodeDisplay = document.getElementById("barcodeDisplay");
-    const cancelBtn = document.getElementById("cancelScanBtn");
-    const flipBtn = document.getElementById("flipCameraBtn");
-    let html5QrCode;
-    let currentCameraIndex = 0;
-    let cameras = [];
+    function submitRemove() {
+      const item = document.getElementById("itemName").value.trim();
+      const quantity = document.getElementById("quantity").value;
+      const unit = document.getElementById("unit").value.trim();
+      const location = document.getElementById("location").value;
+      const statusMessage = document.getElementById("statusMessage");
 
-    function startScanner() {
-      document.getElementById("scanner").style.display = "block";
-      cancelBtn.style.display = "inline-block";
-      flipBtn.style.display = "inline-block";
-
-      Html5Qrcode.getCameras().then(devices => {
-        cameras = devices;
-        if (cameras.length > 0) {
-          const cameraId = cameras[currentCameraIndex].id;
-          html5QrCode = new Html5Qrcode("scanner");
-          html5QrCode.start(
-            cameraId,
-            { fps: 10, qrbox: 250 },
-            (decodedText) => {
-              stopScanner();
-              document.getElementById("barcode").value = decodedText;
-              barcodeDisplay.textContent = decodedText;
-            }
-          ).catch(err => {
-            console.error("Scanner error:", err);
-            stopScanner();
-          });
-        }
-      });
-    }
-
-    function flipCamera() {
-      if (cameras.length < 2) return;
-      currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
-      html5QrCode.stop().then(() => {
-        html5QrCode.clear();
-        startScanner();
-      });
-    }
-
-    function cancelScan() {
-      if (html5QrCode) {
-        html5QrCode.stop().then(() => {
-          html5QrCode.clear();
-          document.getElementById("scanner").style.display = "none";
-          cancelBtn.style.display = "none";
-          flipBtn.style.display = "none";
-        }).catch(err => console.error("Stop error:", err));
+      if (!item) {
+        statusMessage.textContent = "Item name is required.";
+        statusMessage.style.color = "red";
+        return;
       }
-    }
 
-    function stopScanner() {
-      html5QrCode.stop().then(() => {
-        html5QrCode.clear();
-        document.getElementById("scanner").style.display = "none";
-        cancelBtn.style.display = "none";
-        flipBtn.style.display = "none";
-      }).catch(err => console.error("Stop scanner error:", err));
-    }
+      const url = `https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec?remove=true&item=${encodeURIComponent(item)}&quantity=${encodeURIComponent(quantity)}&unit=${encodeURIComponent(unit)}&location=${encodeURIComponent(location)}`;
 
-    document.getElementById("removeForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      fetch(scriptURL + '?' + new URLSearchParams(formData), { method: 'GET' })
-        .then(() => {
-          const status = document.getElementById("status");
-          status.textContent = "Item removed (or updated).";
-          setTimeout(() => status.textContent = "", 5000);
-          e.target.reset();
-          barcodeDisplay.textContent = "(none)";
+      fetch(url)
+        .then(response => response.text())
+        .then(result => {
+          statusMessage.textContent = result;
+          statusMessage.style.color = "green";
+
+          // Auto-clear form
+          document.getElementById("itemName").value = "";
+          document.getElementById("quantity").value = "1";
+          document.getElementById("unit").value = "";
+          document.getElementById("location").selectedIndex = 0;
+
+          // Auto-clear status message
+          setTimeout(() => {
+            statusMessage.textContent = "";
+          }, 5000);
         })
-        .catch(() => {
-          const status = document.getElementById("status");
-          status.textContent = "Error removing item.";
-          setTimeout(() => status.textContent = "", 5000);
+        .catch(error => {
+          statusMessage.textContent = "Error removing item.";
+          statusMessage.style.color = "red";
+          setTimeout(() => {
+            statusMessage.textContent = "";
+          }, 5000);
         });
-    });
+    }
   </script>
 </body>
 </html>
