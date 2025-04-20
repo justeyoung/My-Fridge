@@ -24,20 +24,11 @@
       margin-top: 2rem;
     }
 
-    button:disabled {
-      background-color: #888;
-      cursor: not-allowed;
-    }
-
-    .pdf-section {
-      display: none;
-    }
-
     table {
       border-collapse: collapse;
-      width: 100%;
+      width: 90%;
+      margin: 2rem auto;
       font-size: 0.9rem;
-      margin-top: 1rem;
     }
 
     th, td {
@@ -51,8 +42,13 @@
       color: white;
     }
 
+    .section {
+      page-break-after: always;
+    }
+
     h3 {
-      margin-top: 2rem;
+      margin-top: 3rem;
+      text-align: center;
     }
   </style>
 </head>
@@ -68,54 +64,47 @@
     const downloadBtn = document.getElementById('downloadBtn');
 
     function formatDate(isoString) {
-      if (!isoString || isoString === "") return "";
+      if (!isoString) return '';
       const date = new Date(isoString);
-      if (isNaN(date)) return isoString;
-      return date.toLocaleDateString('en-GB');
+      return isNaN(date) ? isoString : date.toLocaleDateString('en-GB');
     }
 
     function groupByLocation(data) {
-      return data.reduce((groups, item) => {
-        const loc = item.Location || 'Unknown';
-        if (!groups[loc]) groups[loc] = [];
-        groups[loc].push(item);
-        return groups;
+      return data.reduce((acc, row) => {
+        const loc = row.Location || 'Unknown';
+        acc[loc] = acc[loc] || [];
+        acc[loc].push(row);
+        return acc;
       }, {});
     }
 
-    function getTodayString() {
-      const now = new Date();
-      const dd = String(now.getDate()).padStart(2, '0');
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const yyyy = now.getFullYear();
-      return `${dd}-${mm}-${yyyy}`;
+    function getDateSuffix() {
+      const d = new Date();
+      return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
     }
 
-    async function loadAndRender() {
+    async function loadInventory() {
       try {
-        const response = await fetch(scriptURL);
-        let data = await response.json();
+        const res = await fetch(scriptURL);
+        let data = await res.json();
 
-        if (!data || !data.length) {
-          downloadBtn.textContent = 'No data to download';
-          return;
-        }
+        if (!data || !data.length) throw new Error('No inventory data found.');
 
-        // Format dates and filter columns
+        // Format and clean data
         data = data.map(row => ({
           Location: row.Location || 'Unknown',
           Item: row.Item,
           Quantity: row.Quantity,
           Unit: row.Unit,
-          'Expiry Date': formatDate(row['Expiry Date']),
+          'Expiry Date': formatDate(row['Expiry Date'])
         }));
 
         const grouped = groupByLocation(data);
         const container = document.getElementById('pdfContainer');
 
-        for (const [location, items] of Object.entries(grouped)) {
+        Object.entries(grouped).forEach(([location, items]) => {
           const section = document.createElement('div');
-          section.className = 'pdf-section';
+          section.className = 'section';
 
           const title = document.createElement('h3');
           title.textContent = `Inventory - ${location}`;
@@ -136,10 +125,9 @@
           const tbody = document.createElement('tbody');
           items.forEach((item, index) => {
             const row = document.createElement('tr');
-
-            const tdNum = document.createElement('td');
-            tdNum.textContent = index + 1;
-            row.appendChild(tdNum);
+            const sn = document.createElement('td');
+            sn.textContent = index + 1;
+            row.appendChild(sn);
 
             ['Item', 'Quantity', 'Unit', 'Expiry Date'].forEach(field => {
               const td = document.createElement('td');
@@ -153,32 +141,36 @@
           table.appendChild(tbody);
           section.appendChild(table);
           container.appendChild(section);
-        }
+        });
 
         downloadBtn.textContent = 'Download All PDFs';
         downloadBtn.disabled = false;
 
         downloadBtn.onclick = async () => {
-          const today = getTodayString();
-          const sections = document.querySelectorAll('.pdf-section');
+          const today = getDateSuffix();
+          const sections = document.querySelectorAll('.section');
 
           for (const section of sections) {
             const locationName = section.querySelector('h3').textContent.replace('Inventory - ', '').replace(/\s+/g, '-');
-            await html2pdf().from(section).set({
-              margin: 10,
-              filename: `Inventory_${locationName}_${today}.pdf`,
-              html2canvas: { scale: 2 },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).save();
+            await new Promise(resolve => {
+              requestAnimationFrame(() => {
+                html2pdf().from(section).set({
+                  margin: 10,
+                  filename: `Inventory_${locationName}_${today}.pdf`,
+                  html2canvas: { scale: 2 },
+                  jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                }).save().then(resolve);
+              });
+            });
           }
         };
       } catch (err) {
-        downloadBtn.textContent = 'Error loading data';
+        downloadBtn.textContent = 'Failed to load';
         console.error(err);
       }
     }
 
-    loadAndRender();
+    loadInventory();
   </script>
 
 </body>
