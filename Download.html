@@ -54,14 +54,6 @@
       background-color: #4CAF50;
       color: white;
     }
-
-    .pdf-clone {
-      position: absolute;
-      left: 0;
-      top: 0;
-      visibility: hidden;
-      z-index: -1;
-    }
   </style>
 </head>
 <body>
@@ -152,22 +144,12 @@
           const btn = document.createElement('button');
           btn.textContent = 'Download PDF';
           btn.onclick = () => {
-            const clone = section.cloneNode(true);
-            clone.classList.add('pdf-clone');
-            document.body.appendChild(clone);
-
-            requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                html2pdf().from(clone).set({
-                  margin: 10,
-                  filename: `Inventory_${location.replace(/\s+/g, '-')}_${today}.pdf`,
-                  html2canvas: { scale: 2 },
-                  jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                }).save().then(() => {
-                  document.body.removeChild(clone);
-                });
-              });
-            });
+            html2pdf().from(section).set({
+              margin: 10,
+              filename: `Inventory_${location.replace(/\s+/g, '-')}_${today}.pdf`,
+              html2canvas: { scale: 2 },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).save();
           };
 
           section.appendChild(btn);
