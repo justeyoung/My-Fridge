@@ -2,137 +2,105 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Add Item to Fridge</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <h2>Add Item to Fridge</h2>
 
-  <!-- Scan Section -->
-  <div id="scanSection" style="display: none;">
-    <h3>Scan Barcode</h3>
-    <video id="preview" width="100%" style="max-width: 400px;"></video>
-    <br />
-    <button class="button-green" onclick="startScan()">Start Scanning</button>
-    <button class="button-green" onclick="cancelScan()">Cancel Scan</button>
-    <button class="button-dark" onclick="goHome()">Home</button>
+  <div class="scanner-section" style="text-align: center; margin-bottom: 15px;">
+    <button type="button" class="button-green" onclick="showScan()">Scan Barcode</button>
   </div>
 
-  <!-- Add Item Form -->
-  <form id="itemForm">
-    <button type="button" class="button-green" onclick="showScan()">Scan Barcode</button>
-    <div class="form-card">
-      <label>Item Name:</label>
-      <input type="text" id="itemName" required />
+  <div class="form-container">
+    <form id="addItemForm">
+      <label for="item">Item Name:</label>
+      <input type="text" id="item" name="item" required />
 
-      <label>Quantity:</label>
-      <input type="number" id="quantity" min="1" value="1" required />
+      <label for="quantity">Quantity:</label>
+      <input type="number" id="quantity" name="quantity" value="1" required />
 
-      <label>Unit: <span class="optional">(optional)</span></label>
-      <input type="text" id="unit" />
+      <label for="unit">Unit: <span style="font-weight: normal;">(optional)</span></label>
+      <input type="text" id="unit" name="unit" />
 
-      <label>Purchase Date:</label>
-      <input type="date" id="purchaseDate" />
+      <label for="purchaseDate">Purchase Date:</label>
+      <input type="date" id="purchaseDate" name="purchaseDate" />
 
-      <label>Expiry Date: <span class="optional">(optional)</span></label>
-      <input type="date" id="expiryDate" />
+      <label for="expiryDate">Expiry Date: <span style="font-weight: normal;">(optional)</span></label>
+      <input type="date" id="expiryDate" name="expiryDate" />
 
-      <label>Location: <span class="optional">(optional)</span></label>
-      <select id="location">
+      <label for="location">Location: <span style="font-weight: normal;">(optional)</span></label>
+      <select id="location" name="location">
         <option value="">Select location</option>
         <option value="Freezer (garage)">Freezer (garage)</option>
         <option value="Freezer (dining room)">Freezer (dining room)</option>
-        <option value="Fridge (dining room)">Fridge (dining room)</option>
         <option value="Fridge (kitchen)">Fridge (kitchen)</option>
+        <option value="Fridge (dining room)">Fridge (dining room)</option>
       </select>
 
-      <label>Scanned Barcode:</label>
+      <label for="barcode">Scanned Barcode:</label>
       <div id="scannedBarcode">(none)</div>
 
-      <button type="submit" class="button-green" id="submitBtn" disabled>Add Item</button>
-    </div>
-    <div id="statusMessage"></div>
-    <button type="button" class="button-dark" onclick="goHome()">Home</button>
-  </form>
+      <button type="submit" id="submitBtn" class="button-green" disabled>Add Item</button>
+    </form>
 
-  <!-- Scripts -->
-  <script src="https://unpkg.com/@zxing/library@latest"></script>
+    <div id="statusMessage" class="status-message"></div>
+
+    <button class="button-dark" onclick="goHome()">Home</button>
+  </div>
+
   <script>
-    const form = document.getElementById("itemForm");
-    const itemName = document.getElementById("itemName");
-    const submitBtn = document.getElementById("submitBtn");
-    const statusMessage = document.getElementById("statusMessage");
-    const scanSection = document.getElementById("scanSection");
-    const preview = document.getElementById("preview");
-    const scannedBarcode = document.getElementById("scannedBarcode");
-
-    let scanner = null;
-
-    itemName.addEventListener("input", () => {
-      submitBtn.disabled = itemName.value.trim() === "";
-    });
-
+    // Prefill today’s date
     document.getElementById("purchaseDate").valueAsDate = new Date();
 
-    function showScan() {
-      document.getElementById("itemForm").style.display = "none";
-      scanSection.style.display = "block";
-    }
+    const itemInput = document.getElementById("item");
+    const submitBtn = document.getElementById("submitBtn");
 
-    function cancelScan() {
-      scanSection.style.display = "none";
-      document.getElementById("itemForm").style.display = "block";
-      if (scanner) scanner.reset();
-    }
+    itemInput.addEventListener("input", () => {
+      submitBtn.disabled = itemInput.value.trim() === "";
+    });
+
+    document.getElementById("addItemForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      submitBtn.disabled = true;
+
+      const item = itemInput.value.trim();
+      const quantity = document.getElementById("quantity").value || 1;
+      const unit = document.getElementById("unit").value.trim();
+      const purchaseDate = document.getElementById("purchaseDate").value;
+      const expiryDate = document.getElementById("expiryDate").value;
+      const location = document.getElementById("location").value;
+      const barcode = document.getElementById("scannedBarcode").textContent === "(none)" ? "" : document.getElementById("scannedBarcode").textContent;
+
+      const url = "YOUR_SCRIPT_URL_HERE" +
+        `?item=${encodeURIComponent(item)}&quantity=${quantity}&unit=${encodeURIComponent(unit)}&purchaseDate=${purchaseDate}` +
+        `&expiryDate=${expiryDate}&location=${encodeURIComponent(location)}&barcode=${encodeURIComponent(barcode)}`;
+
+      try {
+        const res = await fetch(url);
+        const text = await res.text();
+        document.getElementById("statusMessage").innerText = text;
+        document.getElementById("addItemForm").reset();
+        document.getElementById("purchaseDate").valueAsDate = new Date();
+        document.getElementById("scannedBarcode").textContent = "(none)";
+        setTimeout(() => {
+          document.getElementById("statusMessage").innerText = "";
+        }, 5000);
+      } catch (err) {
+        document.getElementById("statusMessage").innerText = "Error adding item.";
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
 
     function goHome() {
       window.location.href = "index.html";
     }
 
-    function startScan() {
-      scanner = new ZXing.BrowserBarcodeReader();
-      scanner.decodeOnceFromVideoDevice(undefined, preview).then(result => {
-        scannedBarcode.textContent = result.text;
-        cancelScan();
-      }).catch(() => {
-        scannedBarcode.textContent = "(scan failed)";
-        cancelScan();
-      });
+    function showScan() {
+      window.location.href = "scan.html";
     }
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const data = {
-        item: itemName.value.trim(),
-        quantity: document.getElementById("quantity").value,
-        unit: document.getElementById("unit").value,
-        purchaseDate: document.getElementById("purchaseDate").value,
-        expiryDate: document.getElementById("expiryDate").value,
-        location: document.getElementById("location").value,
-        barcode: scannedBarcode.textContent === "(none)" ? "" : scannedBarcode.textContent
-      };
-
-      try {
-        const query = new URLSearchParams(data).toString();
-        const res = await fetch(`https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec?${query}`);
-        const text = await res.text();
-
-        statusMessage.textContent = text;
-        setTimeout(() => statusMessage.textContent = "", 5000);
-
-        if (text.includes("successfully")) {
-          form.reset();
-          scannedBarcode.textContent = "(none)";
-          submitBtn.disabled = true;
-          document.getElementById("purchaseDate").valueAsDate = new Date();
-        }
-      } catch (err) {
-        statusMessage.textContent = "Error adding item.";
-        setTimeout(() => statusMessage.textContent = "", 5000);
-      }
-    });
   </script>
 </body>
 </html>
