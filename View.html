@@ -57,6 +57,13 @@
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec?action=view';
 
+    function formatDate(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      if (isNaN(date)) return value;
+      return date.toLocaleDateString('en-GB'); // dd/mm/yyyy
+    }
+
     fetch(scriptURL)
       .then(response => response.json())
       .then(data => {
@@ -64,15 +71,15 @@
 
         let table = '<table><tr><th>ID</th><th>Item</th><th>Barcode</th><th>Quantity</th><th>Unit</th><th>Purchase Date</th><th>Expiry Date</th><th>Location</th><th>Notes</th></tr>';
 
-        data.forEach(row => {
+        data.slice(1).forEach(row => {
           table += `<tr>
             <td>${row[0] || ''}</td>
             <td>${row[1] || ''}</td>
             <td>${row[2] || ''}</td>
             <td>${row[3] || ''}</td>
             <td>${row[4] || ''}</td>
-            <td>${row[5] || ''}</td>
-            <td>${row[6] || ''}</td>
+            <td>${formatDate(row[5])}</td>
+            <td>${formatDate(row[6])}</td>
             <td>${row[7] || ''}</td>
             <td>${row[8] || ''}</td>
           </tr>`;
