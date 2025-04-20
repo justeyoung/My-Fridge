@@ -67,15 +67,48 @@
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
     const downloadBtn = document.getElementById('downloadBtn');
 
+    function formatDate(isoString) {
+      if (!isoString || isoString === "") return "";
+      const date = new Date(isoString);
+      if (isNaN(date)) return isoString;
+      return date.toLocaleDateString('en-GB');
+    }
+
+    function sortByLocation(data) {
+      return data.sort((a, b) => {
+        const locA = (a.Location || '').toLowerCase();
+        const locB = (b.Location || '').toLowerCase();
+        return locA.localeCompare(locB);
+      });
+    }
+
+    function getTodayFilename() {
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      return `MyFridgeInventory_${dd}-${mm}-${yyyy}.pdf`;
+    }
+
     async function loadAndRenderInventory() {
       try {
         const response = await fetch(scriptURL);
-        const data = await response.json();
+        let data = await response.json();
 
         if (!data || !data.length) {
           downloadBtn.textContent = 'No data to download';
           return;
         }
+
+        // Sort by location
+        data = sortByLocation(data);
+
+        // Format dates
+        data = data.map(row => ({
+          ...row,
+          'Purchase Date': formatDate(row['Purchase Date']),
+          'Expiry Date': formatDate(row['Expiry Date'])
+        }));
 
         const headers = Object.keys(data[0]);
         const headerRow = document.getElementById('tableHeader');
@@ -97,14 +130,13 @@
           tableBody.appendChild(row);
         });
 
-        // Enable the button after table is fully loaded
         downloadBtn.textContent = 'Download PDF';
         downloadBtn.disabled = false;
         downloadBtn.onclick = () => {
           const element = document.getElementById('inventoryContent');
           html2pdf().from(element).set({
             margin: 10,
-            filename: 'MyFridgeInventory.pdf',
+            filename: getTodayFilename(),
             html2canvas: { scale: 2 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
           }).save();
@@ -115,7 +147,6 @@
       }
     }
 
-    // Run on page load
     loadAndRenderInventory();
   </script>
 
