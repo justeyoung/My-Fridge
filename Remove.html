@@ -98,6 +98,9 @@
   <button type="button" id="cancelScanBtn" class="red-btn" onclick="cancelScan()">Cancel Scan</button>
 
   <form id="removeForm">
+    <!-- Hidden flag to tell script this is a REMOVE action -->
+    <input type="hidden" name="remove" value="true">
+
     <label for="item">Item Name:</label>
     <input type="text" id="item" name="item">
 
