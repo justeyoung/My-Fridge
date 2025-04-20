@@ -115,6 +115,7 @@
           const table = document.createElement('table');
           const thead = document.createElement('thead');
           const headerRow = document.createElement('tr');
+
           ['#', 'Item', 'Quantity', 'Unit', 'Expiry Date'].forEach(header => {
             const th = document.createElement('th');
             th.textContent = header;
@@ -143,12 +144,14 @@
           const btn = document.createElement('button');
           btn.textContent = 'Download PDF';
           btn.onclick = () => {
-            html2pdf().from(section).set({
-              margin: 10,
-              filename: `Inventory_${location.replace(/\s+/g, '-')}_${today}.pdf`,
-              html2canvas: { scale: 2 },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).save();
+            requestAnimationFrame(() => {
+              html2pdf().from(section).set({
+                margin: 10,
+                filename: `Inventory_${location.replace(/\s+/g, '-')}_${today}.pdf`,
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+              }).save();
+            });
           };
 
           section.appendChild(btn);
