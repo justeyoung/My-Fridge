@@ -1,0 +1,80 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  padding: 0;
+  background-color: #f8f8f8;
+  color: #333;
+  text-align: center;
+}
+
+h2, h3 {
+  color: #2c7a2f;
+  margin-top: 30px;
+}
+
+.inventory-table {
+  width: 90%;
+  max-width: 700px;
+  margin: 0 auto 20px auto;
+  border-collapse: collapse;
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.inventory-table th,
+.inventory-table td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: left;
+}
+
+.inventory-table th {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.inventory-table td {
+  background-color: #fff;
+}
+
+button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  font-size: 14px;
+  margin-bottom: 40px;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+.home-button {
+  display: inline-block;
+  margin-top: 40px;
+  text-decoration: none;
+  background-color: #444;
+  padding: 10px 18px;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.home-button:hover {
+  background-color: #222;
+}
+
+@media (max-width: 600px) {
+  .inventory-table {
+    font-size: 13px;
+  }
+
+  button,
+  .home-button {
+    font-size: 13px;
+    padding: 8px 16px;
+  }
+}
