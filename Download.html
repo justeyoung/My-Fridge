@@ -46,8 +46,10 @@
       color: white;
     }
 
-    .hidden {
-      display: none;
+    #inventoryContent {
+      visibility: hidden;
+      position: absolute;
+      left: -9999px;
     }
   </style>
 </head>
@@ -56,7 +58,7 @@
   <h2>Download Your Inventory as PDF</h2>
   <button onclick="generatePDF()">Download PDF</button>
 
-  <div id="inventoryContent" class="hidden">
+  <div id="inventoryContent">
     <h3>My Fridge Inventory</h3>
     <table id="inventoryTable">
       <thead>
@@ -70,43 +72,42 @@
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
 
     async function fetchInventory() {
-      try {
-        const response = await fetch(scriptURL);
-        const data = await response.json();
+      const response = await fetch(scriptURL);
+      const data = await response.json();
 
-        if (!data || !data.length) return;
+      const headerRow = document.getElementById('tableHeader');
+      const tableBody = document.getElementById('tableBody');
+      headerRow.innerHTML = '';
+      tableBody.innerHTML = '';
 
-        const headers = Object.keys(data[0]);
-        const headerRow = document.getElementById('tableHeader');
+      if (data.length === 0) return;
+
+      const headers = Object.keys(data[0]);
+      headers.forEach(header => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        headerRow.appendChild(th);
+      });
+
+      data.forEach(item => {
+        const row = document.createElement('tr');
         headers.forEach(header => {
-          const th = document.createElement('th');
-          th.textContent = header;
-          headerRow.appendChild(th);
+          const td = document.createElement('td');
+          td.textContent = item[header];
+          row.appendChild(td);
         });
-
-        const tableBody = document.getElementById('tableBody');
-        data.forEach(item => {
-          const row = document.createElement('tr');
-          headers.forEach(header => {
-            const td = document.createElement('td');
-            td.textContent = item[header];
-            row.appendChild(td);
-          });
-          tableBody.appendChild(row);
-        });
-
-      } catch (err) {
-        alert('Error fetching inventory.');
-        console.error(err);
-      }
+        tableBody.appendChild(row);
+      });
     }
 
     async function generatePDF() {
-      await fetchInventory(); // Load data before exporting
-      const element = document.getElementById('inventoryContent');
-      element.classList.remove('hidden');
-      html2pdf().from(element).save('MyFridgeInventory.pdf');
-      element.classList.add('hidden');
+      await fetchInventory();
+
+      // Wait briefly for DOM to render
+      setTimeout(() => {
+        const element = document.getElementById('inventoryContent');
+        html2pdf().from(element).save('MyFridgeInventory.pdf');
+      }, 300); // 300ms delay for rendering
     }
   </script>
 
