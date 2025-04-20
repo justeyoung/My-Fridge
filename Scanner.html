@@ -9,25 +9,25 @@
 <body>
   <h2>Add Item to Fridge</h2>
 
-  <button class="scan-button" onclick="startScan()">Scan Barcode</button>
+  <button class="green-btn" onclick="startScan()">Scan Barcode</button>
 
-  <div class="form-container">
+  <form id="addForm">
     <label for="itemName">Item Name:</label>
     <input type="text" id="itemName" required />
 
     <label for="quantity">Quantity:</label>
     <input type="number" id="quantity" value="1" min="1" />
 
-    <label for="unit">Unit: <small>(optional)</small></label>
+    <label for="unit">Unit:</label>
     <input type="text" id="unit" />
 
     <label for="purchaseDate">Purchase Date:</label>
     <input type="date" id="purchaseDate" />
 
-    <label for="expiryDate">Expiry Date: <small>(optional)</small></label>
+    <label for="expiryDate">Expiry Date:</label>
     <input type="date" id="expiryDate" />
 
-    <label for="location">Location: <small>(optional)</small></label>
+    <label for="location">Location:</label>
     <select id="location">
       <option value="">Select location</option>
       <option value="Freezer (garage)">Freezer (garage)</option>
@@ -37,12 +37,12 @@
     </select>
 
     <label>Scanned Barcode:</label>
-    <div class="readonly-barcode" id="scannedBarcodeDisplay">(none)</div>
+    <div id="scannedBarcodeDisplay">(none)</div>
 
-    <button class="add-button" onclick="submitForm()">Add Item</button>
+    <button class="green-btn" type="button" onclick="submitForm()">Add Item</button>
     <div id="statusMessage"></div>
-    <button class="home-button" onclick="location.href='index.html'">Home</button>
-  </div>
+    <button class="home-btn" type="button" onclick="location.href='index.html'">Home</button>
+  </form>
 
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
@@ -56,7 +56,6 @@
       window.location.href = "scan.html";
     }
 
-    // Load barcode from sessionStorage (if previously scanned)
     if (sessionStorage.getItem("barcode")) {
       scannedBarcodeValue = sessionStorage.getItem("barcode");
       document.getElementById("scannedBarcodeDisplay").textContent = scannedBarcodeValue;
@@ -75,7 +74,7 @@
 
       if (!item) {
         statusMessage.textContent = "Item name is required.";
-        statusMessage.style.color = "red";
+        statusMessage.className = "error-message";
         return;
       }
 
@@ -98,9 +97,8 @@
       .then(response => response.text())
       .then(result => {
         statusMessage.textContent = result;
-        statusMessage.style.color = "green";
+        statusMessage.className = "success-message";
 
-        // Clear form
         document.getElementById("itemName").value = "";
         document.getElementById("quantity").value = "1";
         document.getElementById("unit").value = "";
@@ -110,17 +108,15 @@
         scannedBarcodeValue = "";
         document.getElementById("scannedBarcodeDisplay").textContent = "(none)";
 
-        // Clear status after 5 sec
         setTimeout(() => {
           statusMessage.textContent = "";
+          statusMessage.className = "";
         }, 5000);
       })
-      .catch(error => {
+      .catch(() => {
         statusMessage.textContent = "Error adding item.";
-        statusMessage.style.color = "red";
-        setTimeout(() => {
-          statusMessage.textContent = "";
-        }, 5000);
+        statusMessage.className = "error-message";
+        setTimeout(() => statusMessage.textContent = "", 5000);
       });
     }
   </script>
