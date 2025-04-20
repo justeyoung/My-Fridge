@@ -1,68 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Current Inventory</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8">
+  <title>Inventory Viewer</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h2>Current Inventory</h2>
-  <div id="inventoryTable">Loading...</div>
-  <button class="home-button" onclick="location.href='index.html'">Home</button>
+  <h2>Inventory</h2>
+  <div id="inventory-container"></div>
+  <button class="home-btn" onclick="window.location.href='index.html'">Home</button>
 
   <script>
-    const sheetURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
 
-    fetch(sheetURL)
-      .then(res => res.json())
+    fetch(scriptURL)
+      .then(response => response.json())
       .then(data => {
-        if (!Array.isArray(data) || data.length === 0) {
-          document.getElementById("inventoryTable").textContent = "No inventory data found.";
-          return;
-        }
-
-        // Group items by Location
+        const container = document.getElementById('inventory-container');
         const grouped = {};
+
         data.forEach(item => {
-          const loc = item["Location"] || "Unknown";
-          if (!grouped[loc]) grouped[loc] = [];
-          grouped[loc].push(item);
+          const location = item['Location'] || 'Unknown';
+          if (!grouped[location]) grouped[location] = [];
+          grouped[location].push(item);
         });
 
-        const container = document.getElementById("inventoryTable");
-        container.innerHTML = "";
+        const sortedLocations = Object.keys(grouped).sort();
 
-        // Render each location group
-        Object.keys(grouped).sort().forEach(location => {
-          const section = document.createElement("div");
-          const title = document.createElement("h3");
-          title.textContent = `Location: ${location}`;
-          section.appendChild(title);
+        sortedLocations.forEach(location => {
+          const section = document.createElement('div');
+          section.className = 'location-group';
 
-          const table = document.createElement("table");
-          const thead = table.insertRow();
-          ["#", "Item", "Quantity", "Unit"].forEach(h => {
-            const th = document.createElement("th");
-            th.textContent = h;
-            thead.appendChild(th);
+          const heading = document.createElement('h3');
+          heading.textContent = `Location: ${location}`;
+          section.appendChild(heading);
+
+          const table = document.createElement('table');
+          const thead = document.createElement('thead');
+          thead.innerHTML = '<tr><th>#</th><th>Item</th><th>Quantity</th><th>Unit</th></tr>';
+          table.appendChild(thead);
+
+          const tbody = document.createElement('tbody');
+          grouped[location].forEach((item, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${index + 1}</td>
+              <td>${item['Item']}</td>
+              <td>${item['Quantity']}</td>
+              <td>${item['Unit']}</td>
+            `;
+            tbody.appendChild(row);
           });
 
-          grouped[location].forEach((entry, index) => {
-            const row = table.insertRow();
-            row.insertCell().textContent = index + 1;
-            row.insertCell().textContent = entry["Item"] || "";
-            row.insertCell().textContent = entry["Quantity"] || "";
-            row.insertCell().textContent = entry["Unit"] || "";
-          });
-
+          table.appendChild(tbody);
           section.appendChild(table);
           container.appendChild(section);
         });
       })
-      .catch(error => {
-        console.error("Error loading data:", error);
-        document.getElementById("inventoryTable").textContent = "Error fetching inventory data.";
+      .catch(() => {
+        document.getElementById('inventory-container').innerHTML =
+          '<p style="color:red">Error fetching inventory data.</p>';
       });
   </script>
 </body>
