@@ -1,137 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Add Item to Fridge</title>
+  <meta charset="UTF-8">
+  <title>Scan Barcode</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    #reader {
+      width: 100%;
+      max-width: 400px;
+      margin: 20px auto;
+    }
+
+    .scanner-controls {
+      margin-top: 10px;
+      z-index: 2;
+      position: relative;
+    }
+
+    .green-btn, .home-btn {
+      margin: 10px;
+    }
+  </style>
 </head>
 <body>
-  <h2>Add Item to Fridge</h2>
+  <h2>Scan Barcode</h2>
 
-  <button class="green-btn" onclick="startScan()">Scan Barcode</button>
+  <div id="reader"></div>
 
-  <form id="addForm" novalidate>
-    <label for="itemName">Item Name:</label>
-    <input type="text" id="itemName" required />
-
-    <label for="quantity">Quantity:</label>
-    <input type="number" id="quantity" value="1" min="1" required />
-
-    <label for="unit">Unit:</label>
-    <input type="text" id="unit" />
-
-    <label for="purchaseDate">Purchase Date:</label>
-    <input type="date" id="purchaseDate" />
-
-    <label for="expiryDate">Expiry Date:</label>
-    <input type="date" id="expiryDate" />
-
-    <label for="location">Location:</label>
-    <select id="location">
-      <option value="">Select location</option>
-      <option value="Freezer (garage)">Freezer (garage)</option>
-      <option value="Freezer (dining room)">Freezer (dining room)</option>
-      <option value="Fridge (dining room)">Fridge (dining room)</option>
-      <option value="Fridge (kitchen)">Fridge (kitchen)</option>
-    </select>
-
-    <label>Scanned Barcode:</label>
-    <div id="scannedBarcodeDisplay">(none)</div>
-
-    <button class="green-btn" id="addBtn" type="submit" disabled>Add Item</button>
-    <div id="statusMessage"></div>
+  <div class="scanner-controls">
+    <button class="green-btn" id="cancelBtn" type="button">Cancel Scan</button>
     <button class="home-btn" type="button" onclick="location.href='index.html'">Home</button>
-  </form>
+  </div>
 
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
-    let scannedBarcodeValue = "";
+    const reader = new Html5Qrcode("reader");
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const form = document.getElementById("addForm");
-      const statusMessage = document.getElementById("statusMessage");
-      const itemNameInput = document.getElementById("itemName");
-      const addBtn = document.getElementById("addBtn");
+    function onScanSuccess(decodedText) {
+      sessionStorage.setItem("barcode", decodedText);
+      reader.stop().then(() => {
+        window.location.href = "add.html";
+      });
+    }
 
-      document.getElementById("purchaseDate").valueAsDate = new Date();
-
-      if (sessionStorage.getItem("barcode")) {
-        scannedBarcodeValue = sessionStorage.getItem("barcode");
-        document.getElementById("scannedBarcodeDisplay").textContent = scannedBarcodeValue;
-        sessionStorage.removeItem("barcode");
-      }
-
-      function validateForm() {
-        const item = itemNameInput.value.trim();
-        addBtn.disabled = item === "";
-      }
-
-      itemNameInput.addEventListener("input", validateForm);
-      validateForm(); // initial check
-
-      form.addEventListener("submit", (event) => {
-        event.preventDefault();
-
-        const item = itemNameInput.value.trim();
-        const quantity = document.getElementById("quantity").value;
-        const unit = document.getElementById("unit").value.trim();
-        const purchaseDate = document.getElementById("purchaseDate").value;
-        const expiryDate = document.getElementById("expiryDate").value;
-        const location = document.getElementById("location").value;
-
-        if (!item) {
-          statusMessage.textContent = "Item name is required.";
-          statusMessage.className = "error-message";
-          return;
-        }
-
-        const formData = new URLSearchParams({
-          action: "add",
-          item,
-          quantity,
-          unit,
-          purchaseDate,
-          expiryDate,
-          location,
-          barcode: scannedBarcodeValue,
-          notes: ""
+    function startScanner() {
+      const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+      Html5Qrcode.getCameras().then(devices => {
+        const cameraId = devices[0].id;
+        reader.start(cameraId, config, onScanSuccess).catch(err => {
+          alert("Camera error: " + err);
         });
+      });
+    }
 
-        fetch(scriptURL, {
-          method: "POST",
-          body: formData
-        })
-        .then(res => res.text())
-        .then(result => {
-          statusMessage.textContent = result;
-          statusMessage.className = "success-message";
-
-          form.reset();
-          document.getElementById("purchaseDate").valueAsDate = new Date();
-          scannedBarcodeValue = "";
-          document.getElementById("scannedBarcodeDisplay").textContent = "(none)";
-          validateForm();
-
-          setTimeout(() => {
-            statusMessage.textContent = "";
-            statusMessage.className = "";
-          }, 5000);
-        })
-        .catch(() => {
-          statusMessage.textContent = "Error adding item.";
-          statusMessage.className = "error-message";
-          setTimeout(() => {
-            statusMessage.textContent = "";
-            statusMessage.className = "";
-          }, 5000);
-        });
+    document.getElementById("cancelBtn").addEventListener("click", () => {
+      reader.stop().then(() => {
+        window.location.href = "add.html";
+      }).catch(() => {
+        window.location.href = "add.html";
       });
     });
 
-    function startScan() {
-      window.location.href = "scan.html";
-    }
+    startScanner();
   </script>
 </body>
 </html>
