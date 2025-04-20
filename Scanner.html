@@ -78,7 +78,7 @@
       status.textContent = 'Adding item...';
 
       try {
-        await fetch('https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?' + params.toString());
+        await fetch('https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLjQBw23y7fKY9BM7rvdCk28hleylnejHDTXb39-1fgkJPT6Oqq9Wlw2aIWLMiqg4ignuM-4Owj7QDRKyRpAwaqCdZoj1WBEuOqq1nIS-oWLwYV0QqWFJMQFxrcmcf4FQi7vKFCPolgXBfjwlyb4o-H-_IbS4RDnB51_wuI6bg3Bh5o6LRwzSS3h4GRvTyPQCQN_XUQP4JKEgKk6yGaod-RpEMgpDMM-o0KnkKtvPtGIdkUkNJdvE1Z3yR2oL0G-SOD0Ehv-L3G5bYI86ejNiwT3Z8EkAg&lib=MXBBtx446DAib2p3xLWMpRDl8s4yoQxnq' + params.toString());
         status.textContent = 'Item added successfully.';
         setTimeout(() => status.textContent = '', 5000);
 
