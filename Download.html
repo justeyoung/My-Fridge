@@ -9,26 +9,39 @@
     body {
       font-family: sans-serif;
       padding: 2rem;
-      text-align: center;
       background: #f9f9f9;
     }
 
+    .section {
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 1rem;
+      margin-bottom: 3rem;
+      border-radius: 6px;
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.05);
+    }
+
+    h2, h3 {
+      text-align: center;
+    }
+
     button {
-      padding: 1rem 2rem;
-      font-size: 1.2rem;
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
       background-color: #4CAF50;
       color: white;
       border: none;
-      border-radius: 6px;
+      border-radius: 5px;
       cursor: pointer;
-      margin-top: 2rem;
+      margin: 1rem auto 0;
+      display: block;
     }
 
     table {
       border-collapse: collapse;
-      width: 90%;
-      margin: 2rem auto;
+      width: 100%;
       font-size: 0.9rem;
+      margin-top: 1rem;
     }
 
     th, td {
@@ -41,32 +54,25 @@
       background-color: #4CAF50;
       color: white;
     }
-
-    .section {
-      page-break-after: always;
-    }
-
-    h3 {
-      margin-top: 3rem;
-      text-align: center;
-    }
   </style>
 </head>
 <body>
 
   <h2>Download Inventory PDFs by Location</h2>
-  <button id="downloadBtn" disabled>Loading Inventory...</button>
-
   <div id="pdfContainer"></div>
 
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
-    const downloadBtn = document.getElementById('downloadBtn');
 
     function formatDate(isoString) {
       if (!isoString) return '';
       const date = new Date(isoString);
       return isNaN(date) ? isoString : date.toLocaleDateString('en-GB');
+    }
+
+    function getTodaySuffix() {
+      const d = new Date();
+      return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
     }
 
     function groupByLocation(data) {
@@ -78,11 +84,6 @@
       }, {});
     }
 
-    function getDateSuffix() {
-      const d = new Date();
-      return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
-    }
-
     async function loadInventory() {
       try {
         const res = await fetch(scriptURL);
@@ -90,7 +91,6 @@
 
         if (!data || !data.length) throw new Error('No inventory data found.');
 
-        // Format and clean data
         data = data.map(row => ({
           Location: row.Location || 'Unknown',
           Item: row.Item,
@@ -101,19 +101,20 @@
 
         const grouped = groupByLocation(data);
         const container = document.getElementById('pdfContainer');
+        const today = getTodaySuffix();
 
-        Object.entries(grouped).forEach(([location, items]) => {
+        Object.entries(grouped).forEach(([location, items], index) => {
           const section = document.createElement('div');
           section.className = 'section';
+          section.id = `section-${index}`;
 
-          const title = document.createElement('h3');
-          title.textContent = `Inventory - ${location}`;
-          section.appendChild(title);
+          const heading = document.createElement('h3');
+          heading.textContent = `Inventory - ${location}`;
+          section.appendChild(heading);
 
           const table = document.createElement('table');
           const thead = document.createElement('thead');
           const headerRow = document.createElement('tr');
-
           ['#', 'Item', 'Quantity', 'Unit', 'Expiry Date'].forEach(header => {
             const th = document.createElement('th');
             th.textContent = header;
@@ -123,49 +124,41 @@
           table.appendChild(thead);
 
           const tbody = document.createElement('tbody');
-          items.forEach((item, index) => {
+          items.forEach((item, i) => {
             const row = document.createElement('tr');
             const sn = document.createElement('td');
-            sn.textContent = index + 1;
+            sn.textContent = i + 1;
             row.appendChild(sn);
-
             ['Item', 'Quantity', 'Unit', 'Expiry Date'].forEach(field => {
               const td = document.createElement('td');
               td.textContent = item[field] || '';
               row.appendChild(td);
             });
-
             tbody.appendChild(row);
           });
 
           table.appendChild(tbody);
           section.appendChild(table);
+
+          const btn = document.createElement('button');
+          btn.textContent = 'Download PDF';
+          btn.onclick = () => {
+            html2pdf().from(section).set({
+              margin: 10,
+              filename: `Inventory_${location.replace(/\s+/g, '-')}_${today}.pdf`,
+              html2canvas: { scale: 2 },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).save();
+          };
+
+          section.appendChild(btn);
           container.appendChild(section);
         });
-
-        downloadBtn.textContent = 'Download All PDFs';
-        downloadBtn.disabled = false;
-
-        downloadBtn.onclick = async () => {
-          const today = getDateSuffix();
-          const sections = document.querySelectorAll('.section');
-
-          for (const section of sections) {
-            const locationName = section.querySelector('h3').textContent.replace('Inventory - ', '').replace(/\s+/g, '-');
-            await new Promise(resolve => {
-              requestAnimationFrame(() => {
-                html2pdf().from(section).set({
-                  margin: 10,
-                  filename: `Inventory_${locationName}_${today}.pdf`,
-                  html2canvas: { scale: 2 },
-                  jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                }).save().then(resolve);
-              });
-            });
-          }
-        };
       } catch (err) {
-        downloadBtn.textContent = 'Failed to load';
+        const errMsg = document.createElement('p');
+        errMsg.textContent = 'Error loading inventory.';
+        errMsg.style.color = 'red';
+        document.body.appendChild(errMsg);
         console.error(err);
       }
     }
