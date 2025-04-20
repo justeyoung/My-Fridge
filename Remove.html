@@ -16,10 +16,10 @@
     <label for="quantity">Quantity to Remove:</label>
     <input type="number" id="quantity" value="1" min="1" />
 
-    <label for="unit">Unit:</label>
+    <label for="unit">Unit: <small>(optional)</small></label>
     <input type="text" id="unit" />
 
-    <label for="location">Location:</label>
+    <label for="location">Location: <small>(optional)</small></label>
     <select id="location">
       <option value="">Select location</option>
       <option value="Freezer (garage)">Freezer (garage)</option>
@@ -34,6 +34,8 @@
   </div>
 
   <script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
+
     function submitRemove() {
       const item = document.getElementById("itemName").value.trim();
       const quantity = document.getElementById("quantity").value;
@@ -47,32 +49,41 @@
         return;
       }
 
-      const url = `https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec?remove=true&item=${encodeURIComponent(item)}&quantity=${encodeURIComponent(quantity)}&unit=${encodeURIComponent(unit)}&location=${encodeURIComponent(location)}`;
+      const formData = new URLSearchParams({
+        action: "remove",
+        item,
+        quantity,
+        unit,
+        location
+      });
 
-      fetch(url)
-        .then(response => response.text())
-        .then(result => {
-          statusMessage.textContent = result;
-          statusMessage.style.color = "green";
+      fetch(scriptURL, {
+        method: "POST",
+        body: formData
+      })
+      .then(response => response.text())
+      .then(result => {
+        statusMessage.textContent = result;
+        statusMessage.style.color = "green";
 
-          // Auto-clear form
-          document.getElementById("itemName").value = "";
-          document.getElementById("quantity").value = "1";
-          document.getElementById("unit").value = "";
-          document.getElementById("location").selectedIndex = 0;
+        // Clear form
+        document.getElementById("itemName").value = "";
+        document.getElementById("quantity").value = "1";
+        document.getElementById("unit").value = "";
+        document.getElementById("location").selectedIndex = 0;
 
-          // Auto-clear status message
-          setTimeout(() => {
-            statusMessage.textContent = "";
-          }, 5000);
-        })
-        .catch(error => {
-          statusMessage.textContent = "Error removing item.";
-          statusMessage.style.color = "red";
-          setTimeout(() => {
-            statusMessage.textContent = "";
-          }, 5000);
-        });
+        // Clear status after 5 sec
+        setTimeout(() => {
+          statusMessage.textContent = "";
+        }, 5000);
+      })
+      .catch(error => {
+        statusMessage.textContent = "Error removing item.";
+        statusMessage.style.color = "red";
+        setTimeout(() => {
+          statusMessage.textContent = "";
+        }, 5000);
+      });
     }
   </script>
 </body>
