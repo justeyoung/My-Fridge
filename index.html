@@ -8,8 +8,8 @@
   <!-- PWA Support -->
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#4CAF50" />
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
 
   <style>
@@ -60,8 +60,9 @@
     let deferredPrompt;
     const installBtn = document.getElementById('installBtn');
 
+    // Listen for install availability
     window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
+      e.preventDefault(); // Prevent the default mini-infobar
       deferredPrompt = e;
       installBtn.style.display = 'block';
     });
@@ -69,10 +70,13 @@
     installBtn.addEventListener('click', async () => {
       if (deferredPrompt) {
         deferredPrompt.prompt();
-        const choice = await deferredPrompt.userChoice;
-        if (choice.outcome === 'accepted') {
-          installBtn.style.display = 'none';
+        const result = await deferredPrompt.userChoice;
+        if (result.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+        } else {
+          console.log('User dismissed the install prompt');
         }
+        installBtn.style.display = 'none';
         deferredPrompt = null;
       }
     });
