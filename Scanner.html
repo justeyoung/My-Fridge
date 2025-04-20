@@ -9,92 +9,106 @@
 <body>
   <h2>Add Item to Fridge</h2>
 
-  <button id="scan-btn" class="btn">Scan Barcode</button>
+  <button class="scan-button" onclick="startScan()">Scan Barcode</button>
 
   <div class="form-container">
-    <label>Item Name:
-      <input type="text" id="itemName" required>
-    </label>
+    <label for="itemName">Item Name:</label>
+    <input type="text" id="itemName" required />
 
-    <label>Quantity:
-      <input type="number" id="quantity" value="1" min="1">
-    </label>
+    <label for="quantity">Quantity:</label>
+    <input type="number" id="quantity" value="1" min="1" />
 
-    <label>Unit: (optional)
-      <input type="text" id="unit">
-    </label>
+    <label for="unit">Unit: <small>(optional)</small></label>
+    <input type="text" id="unit" />
 
-    <label>Purchase Date:
-      <input type="date" id="purchaseDate">
-    </label>
+    <label for="purchaseDate">Purchase Date:</label>
+    <input type="date" id="purchaseDate" />
 
-    <label>Expiry Date: (optional)
-      <input type="date" id="expiryDate">
-    </label>
+    <label for="expiryDate">Expiry Date: <small>(optional)</small></label>
+    <input type="date" id="expiryDate" />
 
-    <label>Location:
-      <select id="location">
-        <option value="">Select location</option>
-        <option value="Freezer (garage)">Freezer (garage)</option>
-        <option value="Freezer (dining room)">Freezer (dining room)</option>
-        <option value="Fridge (dining room)">Fridge (dining room)</option>
-        <option value="Fridge (kitchen)">Fridge (kitchen)</option>
-      </select>
-    </label>
+    <label for="location">Location: <small>(optional)</small></label>
+    <select id="location">
+      <option value="">Select location</option>
+      <option value="Freezer (garage)">Freezer (garage)</option>
+      <option value="Freezer (dining room)">Freezer (dining room)</option>
+      <option value="Fridge (dining room)">Fridge (dining room)</option>
+      <option value="Fridge (kitchen)">Fridge (kitchen)</option>
+    </select>
 
-    <label>Scanned Barcode:
-      <input type="text" id="barcode" readonly placeholder="(none)">
-    </label>
+    <label>Scanned Barcode:</label>
+    <div class="readonly-barcode" id="scannedBarcodeDisplay">(none)</div>
 
-    <button id="submitBtn" class="btn">Add Item</button>
-    <p id="statusMsg"></p>
-    <button onclick="goHome()" class="btn btn-grey">Home</button>
+    <button class="add-button" onclick="submitForm()">Add Item</button>
+    <div id="statusMessage"></div>
+    <button class="home-button" onclick="location.href='index.html'">Home</button>
   </div>
 
   <script>
-    const webAppUrl = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
+    let scannedBarcodeValue = "";
 
-    document.getElementById('submitBtn').addEventListener('click', () => {
-      const item = document.getElementById('itemName').value.trim();
-      const quantity = document.getElementById('quantity').value;
-      const unit = document.getElementById('unit').value;
-      const purchaseDate = document.getElementById('purchaseDate').value;
-      const expiryDate = document.getElementById('expiryDate').value;
-      const location = document.getElementById('location').value;
-      const barcode = document.getElementById('barcode').value;
-
-      const params = new URLSearchParams({
-        item,
-        quantity,
-        unit,
-        purchaseDate,
-        expiryDate,
-        location,
-        barcode
-      });
-
-      fetch(`${webAppUrl}?${params.toString()}`)
-        .then(response => response.text())
-        .then(result => {
-          const statusMsg = document.getElementById('statusMsg');
-          statusMsg.textContent = result;
-          statusMsg.style.color = result.includes('successfully') ? 'green' : 'red';
-
-          setTimeout(() => {
-            statusMsg.textContent = '';
-          }, 5000);
-        });
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("purchaseDate").valueAsDate = new Date();
     });
 
-    document.getElementById('scan-btn').addEventListener('click', () => {
-      window.location.href = 'scanner.html';
-    });
-
-    function goHome() {
-      window.location.href = 'index.html';
+    function startScan() {
+      window.location.href = "scan.html";
     }
 
-    document.getElementById('purchaseDate').valueAsDate = new Date();
+    // Load barcode from sessionStorage (if previously scanned)
+    if (sessionStorage.getItem("barcode")) {
+      scannedBarcodeValue = sessionStorage.getItem("barcode");
+      document.getElementById("scannedBarcodeDisplay").textContent = scannedBarcodeValue;
+      sessionStorage.removeItem("barcode");
+    }
+
+    function submitForm() {
+      const item = document.getElementById("itemName").value.trim();
+      const quantity = document.getElementById("quantity").value;
+      const unit = document.getElementById("unit").value.trim();
+      const purchaseDate = document.getElementById("purchaseDate").value;
+      const expiryDate = document.getElementById("expiryDate").value;
+      const location = document.getElementById("location").value;
+      const barcode = scannedBarcodeValue;
+      const statusMessage = document.getElementById("statusMessage");
+
+      if (!item) {
+        statusMessage.textContent = "Item name is required.";
+        statusMessage.style.color = "red";
+        return;
+      }
+
+      const url = `https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec?item=${encodeURIComponent(item)}&quantity=${encodeURIComponent(quantity)}&unit=${encodeURIComponent(unit)}&purchaseDate=${encodeURIComponent(purchaseDate)}&expiryDate=${encodeURIComponent(expiryDate)}&location=${encodeURIComponent(location)}&barcode=${encodeURIComponent(barcode)}`;
+
+      fetch(url)
+        .then(response => response.text())
+        .then(result => {
+          statusMessage.textContent = result;
+          statusMessage.style.color = "green";
+
+          // Auto-clear the form fields
+          document.getElementById("itemName").value = "";
+          document.getElementById("quantity").value = "1";
+          document.getElementById("unit").value = "";
+          document.getElementById("purchaseDate").valueAsDate = new Date();
+          document.getElementById("expiryDate").value = "";
+          document.getElementById("location").selectedIndex = 0;
+          scannedBarcodeValue = "";
+          document.getElementById("scannedBarcodeDisplay").textContent = "(none)";
+
+          // Auto-clear message after 5 seconds
+          setTimeout(() => {
+            statusMessage.textContent = "";
+          }, 5000);
+        })
+        .catch(error => {
+          statusMessage.textContent = "Error adding item.";
+          statusMessage.style.color = "red";
+          setTimeout(() => {
+            statusMessage.textContent = "";
+          }, 5000);
+        });
+    }
   </script>
 </body>
 </html>
