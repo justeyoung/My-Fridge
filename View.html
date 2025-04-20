@@ -2,56 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inventory Viewer</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <h2>Inventory</h2>
 
-  <h2>Current Inventory</h2>
-  <div id="error" class="error"></div>
-  <div id="inventoryTable"></div>
-
-  <a href="index.html" class="home-button">Home</a>
+  <div id="inventoryTable">Loading...</div>
+  <button class="home-button" onclick="location.href='index.html'">Home</button>
 
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec?action=view';
+    const sheetURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
 
-    function formatDate(value) {
-      if (!value) return '';
-      const date = new Date(value);
-      return isNaN(date) ? value : date.toLocaleDateString('en-GB');
-    }
-
-    fetch(scriptURL)
-      .then(response => response.json())
+    fetch(sheetURL)
+      .then(res => res.json())
       .then(data => {
-        if (!Array.isArray(data)) throw new Error('Invalid data format');
+        if (!Array.isArray(data) || data.length === 0) {
+          document.getElementById("inventoryTable").textContent = "No data found.";
+          return;
+        }
 
-        let table = '<table class="inventory-table"><tr><th>ID</th><th>Item</th><th>Barcode</th><th>Quantity</th><th>Unit</th><th>Purchase Date</th><th>Expiry Date</th><th>Location</th><th>Notes</th></tr>';
+        const table = document.createElement("table");
+        const headerRow = table.insertRow();
 
-        data.slice(1).forEach(row => {
-          table += `<tr>
-            <td>${row[0] || ''}</td>
-            <td>${row[1] || ''}</td>
-            <td>${row[2] || ''}</td>
-            <td>${row[3] || ''}</td>
-            <td>${row[4] || ''}</td>
-            <td>${formatDate(row[5])}</td>
-            <td>${formatDate(row[6])}</td>
-            <td>${row[7] || ''}</td>
-            <td>${row[8] || ''}</td>
-          </tr>`;
+        const headers = Object.keys(data[0]);
+        headers.forEach(header => {
+          const th = document.createElement("th");
+          th.textContent = header;
+          headerRow.appendChild(th);
         });
 
-        table += '</table>';
-        document.getElementById('inventoryTable').innerHTML = table;
+        data.forEach(entry => {
+          const row = table.insertRow();
+          headers.forEach(header => {
+            const cell = row.insertCell();
+            let value = entry[header];
+
+            // Format expiry and purchase dates
+            if (header.includes("Date") && value) {
+              try {
+                const date = new Date(value);
+                value = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth()+1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+              } catch {}
+            }
+
+            cell.textContent = value || "";
+          });
+        });
+
+        const wrapper = document.getElementById("inventoryTable");
+        wrapper.innerHTML = "";
+        wrapper.appendChild(table);
       })
       .catch(error => {
-        document.getElementById('error').textContent = 'Error fetching inventory data.';
-        console.error(error);
+        console.error("Error fetching data:", error);
+        document.getElementById("inventoryTable").textContent = "Error fetching inventory data.";
       });
   </script>
-
 </body>
 </html>
