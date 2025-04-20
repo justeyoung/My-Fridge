@@ -54,12 +54,19 @@
       background-color: #4CAF50;
       color: white;
     }
+
+    #temp-container {
+      position: absolute;
+      left: -9999px;
+      top: 0;
+    }
   </style>
 </head>
 <body>
 
   <h2>Download Inventory PDFs by Location</h2>
   <div id="pdfContainer"></div>
+  <div id="temp-container"></div>
 
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
@@ -101,6 +108,7 @@
 
         const grouped = groupByLocation(data);
         const container = document.getElementById('pdfContainer');
+        const tempContainer = document.getElementById('temp-container');
         const today = getTodaySuffix();
 
         Object.entries(grouped).forEach(([location, items], index) => {
@@ -144,13 +152,18 @@
           const btn = document.createElement('button');
           btn.textContent = 'Download PDF';
           btn.onclick = () => {
+            const clone = section.cloneNode(true);
+            tempContainer.innerHTML = ''; // Clear previous
+            tempContainer.appendChild(clone);
             requestAnimationFrame(() => {
-              html2pdf().from(section).set({
+              html2pdf().from(clone).set({
                 margin: 10,
                 filename: `Inventory_${location.replace(/\s+/g, '-')}_${today}.pdf`,
                 html2canvas: { scale: 2 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-              }).save();
+              }).save().then(() => {
+                tempContainer.innerHTML = ''; // Clean up after save
+              });
             });
           };
 
