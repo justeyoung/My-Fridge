@@ -12,12 +12,30 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .launcher-card {
+      background: white;
+      max-width: 500px;
+      margin: 40px auto;
+      padding: 30px 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .launcher-title {
+      color: #2a7d2e;
+      margin-top: 40px;
+    }
+  </style>
 </head>
 <body>
 
-  <h2>Derek’s Fridge</h2>
+  <h2 class="launcher-title">Derek’s Fridge</h2>
 
-  <div class="form-card" style="text-align: center;">
+  <div class="launcher-card">
     <button onclick="location.href='scanner.html'" class="button green">Add Item</button>
     <button onclick="location.href='remove.html'" class="button green">Remove Item</button>
     <button onclick="location.href='view.html'" class="button green">Inventory Viewer</button>
