@@ -7,9 +7,13 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h2>Download Inventory PDFs by Location</h2>
-  <div id="inventory"></div>
-  <button class="btn home-btn" onclick="window.location.href='index.html'">Home</button>
+  <h2 class="title">Download Inventory PDFs by Location</h2>
+
+  <div id="inventoryContainer"></div>
+
+  <div class="button-group" style="justify-content: center;">
+    <a href="index.html" class="button grey">Home</a>
+  </div>
 
   <script>
     const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
@@ -18,19 +22,25 @@
       .then(res => res.json())
       .then(data => {
         const grouped = {};
-
         data.forEach(item => {
           const location = item["Location"] || "Unknown";
           if (!grouped[location]) grouped[location] = [];
           grouped[location].push(item);
         });
 
-        const container = document.getElementById('inventory');
+        const container = document.getElementById('inventoryContainer');
         container.innerHTML = '';
 
-        Object.keys(grouped).forEach(location => {
-          const table = document.createElement('table');
-          const thead = document.createElement('thead');
+        Object.entries(grouped).forEach(([location, items]) => {
+          const section = document.createElement("div");
+          section.className = "form-card";
+
+          const heading = document.createElement("h3");
+          heading.textContent = `Location: ${location}`;
+          section.appendChild(heading);
+
+          const table = document.createElement("table");
+          const thead = document.createElement("thead");
           thead.innerHTML = `
             <tr>
               <th>#</th>
@@ -38,37 +48,35 @@
               <th>Quantity</th>
               <th>Unit</th>
               <th>Expiry Date</th>
-            </tr>
-          `;
+            </tr>`;
           table.appendChild(thead);
 
-          const tbody = document.createElement('tbody');
-          grouped[location].forEach((item, i) => {
-            const row = document.createElement('tr');
+          const tbody = document.createElement("tbody");
+          items.forEach((item, i) => {
+            const row = document.createElement("tr");
             row.innerHTML = `
               <td>${i + 1}</td>
               <td>${item["Item"]}</td>
               <td>${item["Quantity"]}</td>
               <td>${item["Unit"] || ''}</td>
-              <td>${formatDate(item["Expiry Date"])}</td>
-            `;
+              <td>${formatDate(item["Expiry Date"])}</td>`;
             tbody.appendChild(row);
           });
 
           table.appendChild(tbody);
-
-          const section = document.createElement('section');
-          section.innerHTML = `<h3>Location: ${location}</h3>`;
           section.appendChild(table);
 
-          const btn = document.createElement('button');
-          btn.className = 'btn green';
-          btn.textContent = 'Print PDF';
+          const btn = document.createElement("button");
+          btn.className = "button green";
+          btn.textContent = "Print PDF";
           btn.onclick = () => printTable(section);
           section.appendChild(btn);
 
           container.appendChild(section);
         });
+      })
+      .catch(() => {
+        document.getElementById('inventoryContainer').innerHTML = "<p class='status-message error'>Error fetching inventory data.</p>";
       });
 
     function formatDate(dateStr) {
@@ -81,14 +89,17 @@
     function printTable(section) {
       const newWindow = window.open('', '_blank');
       newWindow.document.write(`
-        <html><head><title>Inventory PDF</title>
+        <html>
+        <head><title>Inventory PDF</title>
         <style>
           body { font-family: Arial, sans-serif; padding: 20px; }
           table { border-collapse: collapse; width: 100%; }
           th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
           th { background-color: #4CAF50; color: white; }
         </style>
-        </head><body>${section.innerHTML}</body></html>
+        </head>
+        <body>${section.innerHTML}</body>
+        </html>
       `);
       newWindow.document.close();
       newWindow.focus();
