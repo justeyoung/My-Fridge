@@ -1,66 +1,71 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Inventory Viewer</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <h2>Inventory</h2>
-  <div id="inventory-container"></div>
-  <button class="home-btn" onclick="window.location.href='index.html'">Home</button>
+  <div id="inventory"></div>
+  <button class="btn home-btn" onclick="location.href='index.html'">Home</button>
 
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec';
+    async function fetchInventory() {
+      try {
+        const response = await fetch('https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec');
+        const data = await response.json();
+        const grouped = groupByLocation(data);
+        displayGroupedData(grouped);
+      } catch (error) {
+        document.getElementById('inventory').innerHTML = '<p style="color:red;">Error fetching inventory data.</p>';
+      }
+    }
 
-    fetch(scriptURL)
-      .then(response => response.json())
-      .then(data => {
-        const container = document.getElementById('inventory-container');
-        const grouped = {};
+    function groupByLocation(data) {
+      return data.reduce((acc, item) => {
+        const location = item['Location'] || 'Unknown';
+        if (!acc[location]) acc[location] = [];
+        acc[location].push(item);
+        return acc;
+      }, {});
+    }
 
-        data.forEach(item => {
-          const location = item['Location'] || 'Unknown';
-          if (!grouped[location]) grouped[location] = [];
-          grouped[location].push(item);
-        });
+    function displayGroupedData(grouped) {
+      const container = document.getElementById('inventory');
+      container.innerHTML = '';
 
-        const sortedLocations = Object.keys(grouped).sort();
-
-        sortedLocations.forEach(location => {
-          const section = document.createElement('div');
-          section.className = 'location-group';
-
-          const heading = document.createElement('h3');
-          heading.textContent = `Location: ${location}`;
-          section.appendChild(heading);
-
-          const table = document.createElement('table');
-          const thead = document.createElement('thead');
-          thead.innerHTML = '<tr><th>#</th><th>Item</th><th>Quantity</th><th>Unit</th></tr>';
-          table.appendChild(thead);
-
-          const tbody = document.createElement('tbody');
-          grouped[location].forEach((item, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${index + 1}</td>
-              <td>${item['Item']}</td>
-              <td>${item['Quantity']}</td>
-              <td>${item['Unit']}</td>
-            `;
-            tbody.appendChild(row);
-          });
-
-          table.appendChild(tbody);
-          section.appendChild(table);
-          container.appendChild(section);
-        });
-      })
-      .catch(() => {
-        document.getElementById('inventory-container').innerHTML =
-          '<p style="color:red">Error fetching inventory data.</p>';
+      Object.entries(grouped).forEach(([location, items]) => {
+        const section = document.createElement('section');
+        section.innerHTML = `
+          <h3>Location: ${location}</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Unit</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map((item, index) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>${item['Item']}</td>
+                  <td>${item['Quantity']}</td>
+                  <td>${item['Unit']}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        container.appendChild(section);
       });
+    }
+
+    fetchInventory();
   </script>
 </body>
 </html>
