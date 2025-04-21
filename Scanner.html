@@ -9,8 +9,8 @@
 <body>
   <h2>Add Item to Fridge</h2>
 
-  <div class="form-container">
-    <button id="scanBtn" class="btn green">Scan Barcode</button>
+  <div class="form-card">
+    <button id="scanBtn" class="button scan-button">Scan Barcode</button>
 
     <form id="addItemForm">
       <label for="item">Item Name:</label>
@@ -41,21 +41,21 @@
       <input type="text" id="barcode" name="barcode" readonly value="(none)" />
 
       <div class="button-group">
-        <button type="submit" id="submitBtn" class="btn green" disabled>Add Item</button>
-        <a href="index.html" class="btn home-btn">Home</a>
+        <button type="submit" id="submitBtn" class="button" disabled>Add Item</button>
+        <a href="index.html" class="button grey">Home</a>
       </div>
     </form>
 
     <p id="statusMessage" class="status-message"></p>
   </div>
 
-  <!-- Barcode Scanner Modal -->
+  <!-- Scanner Modal -->
   <div id="scannerModal" class="modal hidden">
     <h3>Scan Barcode</h3>
     <div id="reader" style="width: 100%"></div>
     <div class="button-group">
-      <button id="flipCameraBtn" class="btn">Flip Camera</button>
-      <button id="cancelScanBtn" class="btn grey">Cancel Scan</button>
+      <button id="flipCameraBtn" class="button">Flip Camera</button>
+      <button id="cancelScanBtn" class="button grey">Cancel Scan</button>
     </div>
   </div>
 
@@ -67,11 +67,11 @@
     const submitBtn = document.getElementById('submitBtn');
     const statusMessage = document.getElementById('statusMessage');
     const barcodeInput = document.getElementById('barcode');
+
     const scanBtn = document.getElementById('scanBtn');
     const scannerModal = document.getElementById('scannerModal');
     const cancelScanBtn = document.getElementById('cancelScanBtn');
     const flipCameraBtn = document.getElementById('flipCameraBtn');
-
     let scanner, cameraId = null, cameras = [];
 
     document.getElementById('purchaseDate').valueAsDate = new Date();
@@ -91,9 +91,9 @@
       try {
         const response = await fetch('https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec?' + query);
         const result = await response.text();
-        statusMessage.textContent = result.includes('success') ? 'Item added successfully.' :
-                                    result.includes('updated') ? 'Quantity updated for existing item.' :
-                                    'Error adding item.';
+        statusMessage.textContent = result.includes('success')
+          ? 'Item added successfully.'
+          : result;
         form.reset();
         barcodeInput.value = "(none)";
         document.getElementById('purchaseDate').valueAsDate = new Date();
@@ -117,7 +117,8 @@
             scanner.stop();
             scanner.clear();
             scannerModal.classList.add('hidden');
-          }
+          },
+          (errorMessage) => {}
         );
       }
     });
