@@ -41,33 +41,30 @@ td {
   text-align: center;
 }
 
-.btn {
+.button {
   display: inline-block;
   padding: 10px 20px;
   font-size: 16px;
-  margin: 20px auto;
+  margin: 10px 5px;
   cursor: pointer;
   border: none;
   border-radius: 5px;
   text-align: center;
+  background-color: #4CAF50;
+  color: white;
   transition: background-color 0.3s ease;
 }
 
-.btn:hover {
+.button:hover {
   opacity: 0.9;
 }
 
-.btn.green {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.btn.grey {
+.button.secondary {
   background-color: #555;
   color: white;
 }
 
-.btn.home-btn {
+.button.home {
   background-color: #555;
   color: white;
   font-weight: bold;
@@ -100,11 +97,46 @@ input:disabled, select:disabled {
   margin-top: 10px;
 }
 
-.form-container {
+.status-message {
+  margin-top: 10px;
+  font-weight: bold;
+  color: #2a7d2e;
+}
+
+.form-card {
   max-width: 400px;
-  margin: auto;
+  margin: 30px auto;
   padding: 20px;
   background-color: white;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.modal {
+  position: fixed;
+  z-index: 1000;
+  background: white;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.hidden {
+  display: none;
+}
+
+.optional {
+  font-weight: normal;
+  font-size: 0.9em;
+  color: #888;
+}
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
