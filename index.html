@@ -11,51 +11,22 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-
-  <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      padding: 2rem;
-      text-align: center;
-      background: #f0f0f0;
-    }
-
-    h1 {
-      color: #4CAF50;
-      margin-bottom: 2rem;
-    }
-
-    button {
-      display: block;
-      margin: 1rem auto;
-      padding: 1rem 2rem;
-      font-size: 1rem;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      width: 80%;
-      max-width: 300px;
-    }
-
-    #installBtn {
-      background-color: #333;
-      margin-top: 3rem;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-  <h1>Derek’s Fridge</h1>
+  <h2>Derek’s Fridge</h2>
 
-  <button onclick="location.href='scanner.html'">Add Item</button>
-  <button onclick="location.href='remove.html'">Remove Item</button>
-  <button onclick="location.href='view.html'">Inventory Viewer</button>
-  <button onclick="location.href='download.html'">Download Inventory (PDF)</button>
+  <div class="form-card" style="text-align: center;">
+    <button onclick="location.href='scanner.html'" class="button green">Add Item</button>
+    <button onclick="location.href='remove.html'" class="button green">Remove Item</button>
+    <button onclick="location.href='view.html'" class="button green">Inventory Viewer</button>
+    <button onclick="location.href='download.html'" class="button green">Download Inventory (PDF)</button>
+  </div>
 
-  <button id="installBtn" style="display:none;">Install App</button>
+  <div class="button-group" style="justify-content: center;">
+    <button id="installBtn" class="button grey" style="display:none;">Install App</button>
+  </div>
 
   <script>
     let deferredPrompt;
@@ -64,7 +35,7 @@
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      installBtn.style.display = 'block';
+      installBtn.style.display = 'inline-block';
     });
 
     installBtn.addEventListener('click', async () => {
