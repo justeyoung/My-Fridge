@@ -11,9 +11,9 @@
 
   <div id="inventoryContainer" class="form-card"></div>
 
-  <div style="text-align: center; margin: 40px 0;">
-  <a href="index.html" class="button grey">Home</a>
-</div>
+  <div class="button-group" style="justify-content: center;">
+    <a href="index.html" class="button grey">Home</a>
+  </div>
 
   <script>
     const endpoint = "https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec";
@@ -37,7 +37,6 @@
 
           const heading = document.createElement("h3");
           heading.textContent = `Location: ${location}`;
-          heading.style.color = "#2a7d2e";
           section.appendChild(heading);
 
           const table = document.createElement("table");
@@ -68,7 +67,7 @@
         });
       })
       .catch(() => {
-        document.getElementById("inventoryContainer").innerHTML = "<p class='error-message'>Error fetching inventory data.</p>";
+        document.getElementById("inventoryContainer").innerHTML = "<p class='status-message error'>Error fetching inventory data.</p>";
       });
   </script>
 </body>
