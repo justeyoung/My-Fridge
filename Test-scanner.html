@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Test Barcode Scanner</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    #reader {
+      width: 100%;
+      max-width: 400px;
+      margin: auto;
+    }
+    .button-group {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #barcodeResult {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #2a7d2e;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Test Barcode Scanner</h2>
+  <div id="reader"></div>
+
+  <div class="button-group">
+    <button id="flipCameraBtn">Flip Camera</button>
+    <button id="stopBtn">Cancel Scan</button>
+  </div>
+
+  <div id="barcodeResult">(none)</div>
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script>
+    let scanner;
+    let cameras = [];
+    let cameraId = null;
+
+    async function initScanner() {
+      try {
+        scanner = new Html5Qrcode("reader");
+        cameras = await Html5Qrcode.getCameras();
+        if (cameras.length === 0) {
+          document.getElementById("barcodeResult").textContent = "No cameras found.";
+          return;
+        }
+        cameraId = cameras[0].id;
+        startScanner(cameraId);
+      } catch (err) {
+        document.getElementById("barcodeResult").textContent = "Scanner error: " + err;
+      }
+    }
+
+    function startScanner(id) {
+      scanner.start(
+        id,
+        { fps: 10, qrbox: 250 },
+        (decodedText) => {
+          document.getElementById("barcodeResult").textContent = "Scanned: " + decodedText;
+          scanner.stop();
+        }
+      );
+    }
+
+    document.getElementById("flipCameraBtn").addEventListener("click", () => {
+      if (!cameras.length) return;
+      const currentIndex = cameras.findIndex(c => c.id === cameraId);
+      const nextIndex = (currentIndex + 1) % cameras.length;
+      cameraId = cameras[nextIndex].id;
+      scanner.stop().then(() => startScanner(cameraId));
+    });
+
+    document.getElementById("stopBtn").addEventListener("click", () => {
+      scanner.stop().then(() => {
+        document.getElementById("barcodeResult").textContent = "(scanner stopped)";
+        document.getElementById("reader").innerHTML = "";
+      });
+    });
+
+    initScanner();
+  </script>
+
+</body>
+</html>
