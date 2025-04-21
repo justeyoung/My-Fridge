@@ -9,8 +9,8 @@
 <body>
   <h2>Add Item to Fridge</h2>
 
-  <div class="form-container">
-    <button id="scanBtn" class="btn green">Scan Barcode</button>
+  <div class="form-card">
+    <button id="scanBtn" class="button green">Scan Barcode</button>
 
     <form id="addItemForm">
       <label for="item">Item Name:</label>
@@ -41,20 +41,21 @@
       <input type="text" id="barcode" name="barcode" readonly value="(none)" />
 
       <div class="button-group">
-        <button type="submit" id="submitBtn" class="btn green" disabled>Add Item</button>
-        <a href="index.html" class="btn home-btn">Home</a>
+        <button type="submit" id="submitBtn" class="button green" disabled>Add Item</button>
+        <a href="index.html" class="button grey">Home</a>
       </div>
     </form>
 
-    <p id="statusMessage" class="error-message"></p>
+    <p id="statusMessage" class="status-message"></p>
   </div>
 
+  <!-- Barcode Scanner Modal -->
   <div id="scannerModal" class="modal hidden">
     <h3>Scan Barcode</h3>
     <div id="reader" style="width: 100%"></div>
     <div class="button-group">
-      <button id="flipCameraBtn" class="btn">Flip Camera</button>
-      <button id="cancelScanBtn" class="btn grey">Cancel Scan</button>
+      <button id="flipCameraBtn" class="button green">Flip Camera</button>
+      <button id="cancelScanBtn" class="button grey">Cancel Scan</button>
     </div>
   </div>
 
@@ -62,9 +63,10 @@
   <script>
     const form = document.getElementById('addItemForm');
     const itemInput = document.getElementById('item');
+    const quantityInput = document.getElementById('quantity');
     const submitBtn = document.getElementById('submitBtn');
-    const barcodeInput = document.getElementById('barcode');
     const statusMessage = document.getElementById('statusMessage');
+    const barcodeInput = document.getElementById('barcode');
 
     const scanBtn = document.getElementById('scanBtn');
     const scannerModal = document.getElementById('scannerModal');
@@ -72,8 +74,10 @@
     const flipCameraBtn = document.getElementById('flipCameraBtn');
     let scanner, cameraId = null, cameras = [];
 
+    // Set today's date as default
     document.getElementById('purchaseDate').valueAsDate = new Date();
 
+    // Enable submit button if item name is entered
     function toggleSubmitButton() {
       submitBtn.disabled = itemInput.value.trim() === '';
     }
@@ -89,7 +93,9 @@
       try {
         const response = await fetch('https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec?' + query);
         const result = await response.text();
-        statusMessage.textContent = result.includes('success') ? 'Item added successfully.' : result;
+        statusMessage.textContent = result.includes('success') || result.includes('updated')
+          ? result
+          : 'Error adding item.';
         form.reset();
         barcodeInput.value = "(none)";
         document.getElementById('purchaseDate').valueAsDate = new Date();
