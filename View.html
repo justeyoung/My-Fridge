@@ -9,7 +9,7 @@
 <body>
   <h2 class="title">Inventory</h2>
 
-  <div id="inventoryContainer" class="form-card"></div>
+  <div id="inventoryContainer"></div>
 
   <div class="button-group" style="justify-content: center;">
     <a href="index.html" class="button grey">Home</a>
@@ -33,7 +33,8 @@
         container.innerHTML = "";
 
         Object.entries(grouped).forEach(([location, items]) => {
-          const section = document.createElement("section");
+          const section = document.createElement("div");
+          section.className = "form-card";
 
           const heading = document.createElement("h3");
           heading.textContent = `Location: ${location}`;
