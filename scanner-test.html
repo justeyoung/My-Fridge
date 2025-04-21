@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Test Barcode Scanner</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <h2 class="title">Test Barcode Scanner</h2>
+
+  <div style="text-align:center;">
+    <div id="reader" style="width: 300px; margin: 0 auto;"></div>
+    <div class="button-group" style="justify-content: center; margin-top: 10px;">
+      <button id="flipCameraBtn" class="button grey">Flip Camera</button>
+      <button id="cancelScanBtn" class="button grey">Cancel Scan</button>
+    </div>
+    <p id="result" class="status-message success">(none)</p>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script>
+    let scanner;
+    let cameraId = null;
+    let cameras = [];
+
+    const resultDisplay = document.getElementById('result');
+    const readerContainer = document.getElementById('reader');
+    const flipBtn = document.getElementById('flipCameraBtn');
+    const cancelBtn = document.getElementById('cancelScanBtn');
+
+    async function startScanner() {
+      scanner = new Html5Qrcode("reader");
+      cameras = await Html5Qrcode.getCameras();
+      if (cameras.length === 0) {
+        resultDisplay.textContent = "No cameras found.";
+        return;
+      }
+
+      cameraId = cameras[0].id;
+      scanner.start(
+        cameraId,
+        { fps: 10, qrbox: 250 },
+        (decodedText) => {
+          resultDisplay.textContent = decodedText;
+        }
+      );
+    }
+
+    flipBtn.addEventListener('click', async () => {
+      if (!scanner || cameras.length < 2) return;
+      const currentIndex = cameras.findIndex(c => c.id === cameraId);
+      const nextIndex = (currentIndex + 1) % cameras.length;
+      cameraId = cameras[nextIndex].id;
+
+      await scanner.stop();
+      await scanner.clear();
+
+      scanner.start(
+        cameraId,
+        { fps: 10, qrbox: 250 },
+        (decodedText) => {
+          resultDisplay.textContent = decodedText;
+        }
+      );
+    });
+
+    cancelBtn.addEventListener('click', async () => {
+      if (scanner) {
+        await scanner.stop();
+        await scanner.clear();
+        resultDisplay.textContent = "(none)";
+      }
+    });
+
+    startScanner();
+  </script>
+</body>
+</html>
