@@ -122,3 +122,53 @@ input:disabled, select:disabled {
 .modal.hidden {
   display: none;
 }
+
+/* Inventory Section Styling */
+section {
+  margin: 30px auto;
+  max-width: 600px;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  text-align: left;
+}
+
+/* Table Styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+thead th {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px;
+  text-align: center;
+}
+
+td {
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+th {
+  border: 1px solid #ddd;
+}
+
+/* Home Button at Bottom */
+.btn.home-btn {
+  background-color: #555;
+  color: white;
+  padding: 12px 28px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  margin: 40px auto;
+  cursor: pointer;
+  display: inline-block;
+  transition: background-color 0.3s ease;
+}
