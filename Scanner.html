@@ -74,10 +74,10 @@
     const flipCameraBtn = document.getElementById('flipCameraBtn');
     let scanner, cameraId = null, cameras = [];
 
-    // Default today’s date
+    // Set today as default purchase date
     document.getElementById('purchaseDate').valueAsDate = new Date();
 
-    // Enable submit button only if name is entered
+    // Enable submit only if item name is filled
     function toggleSubmitButton() {
       submitBtn.disabled = itemInput.value.trim() === '';
     }
@@ -87,20 +87,32 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(form);
-      const query = new URLSearchParams(formData).toString();
+      formData.append("action", "add");
 
       statusMessage.textContent = "Adding item...";
+
       try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec?' + query);
+        const response = await fetch("https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec", {
+          method: "POST",
+          body: formData
+        });
+
         const result = await response.text();
-        statusMessage.textContent = result.includes('success') ? 'Item added successfully.' : 'Error adding item.';
+        statusMessage.textContent = result;
+        statusMessage.style.color = result.toLowerCase().includes("success") ? "green" : "red";
+
         form.reset();
         barcodeInput.value = "(none)";
         document.getElementById('purchaseDate').valueAsDate = new Date();
         toggleSubmitButton();
       } catch (err) {
         statusMessage.textContent = "Error adding item.";
+        statusMessage.style.color = "red";
       }
+
+      setTimeout(() => {
+        statusMessage.textContent = "";
+      }, 5000);
     });
 
     scanBtn.addEventListener('click', async () => {
@@ -117,8 +129,7 @@
             scanner.stop();
             scanner.clear();
             scannerModal.classList.add('hidden');
-          },
-          (errorMessage) => {}
+          }
         );
       }
     });
@@ -137,13 +148,16 @@
       const nextIndex = (currentIndex + 1) % cameras.length;
       cameraId = cameras[nextIndex].id;
       scanner.stop().then(() => {
-        scanner.start(cameraId, { fps: 10, qrbox: 250 },
+        scanner.start(
+          cameraId,
+          { fps: 10, qrbox: 250 },
           (decodedText) => {
             barcodeInput.value = decodedText;
             scanner.stop();
             scanner.clear();
             scannerModal.classList.add('hidden');
-          });
+          }
+        );
       });
     });
   </script>
