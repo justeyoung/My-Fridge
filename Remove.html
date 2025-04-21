@@ -60,21 +60,20 @@
       e.preventDefault();
       const formData = new FormData(form);
       formData.append("action", "remove");
-      const query = new URLSearchParams(formData).toString();
 
       statusMessage.textContent = "Removing item...";
       try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec', {
-          method: "POST",
-          body: query,
-          headers: { "Content-Type": "application/x-www-form-urlencoded" }
-        });
+        const response = await fetch(
+          'https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec',
+          {
+            method: "POST",
+            body: formData
+          }
+        );
         const result = await response.text();
-        if (result.startsWith("{") || result.startsWith("[")) {
-          statusMessage.textContent = "Unexpected server response.";
-        } else {
-          statusMessage.textContent = result;
-        }
+        statusMessage.textContent = result.includes("removed") || result.includes("updated")
+          ? result
+          : result || "Item not found.";
         form.reset();
         barcodeInput.value = "(none)";
       } catch (err) {
