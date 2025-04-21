@@ -1,113 +1,110 @@
-/* styles.css */
-
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f8f8;
   margin: 0;
   padding: 0;
-  background-color: #f7f7f7;
   text-align: center;
 }
 
-.title {
-  color: #2a7a2e;
-  margin-top: 30px;
-  margin-bottom: 20px;
+h2, h3 {
+  color: #2a7d2e;
+  margin-top: 20px;
 }
 
-.form-container {
-  background-color: #fff;
-  max-width: 400px;
-  margin: 0 auto 40px auto;
-  padding: 25px;
-  border-radius: 8px;
+section {
+  margin: 30px auto;
+  max-width: 600px;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-label {
-  display: block;
-  text-align: left;
-  margin-top: 15px;
-  font-weight: bold;
-}
-
-input[type="text"],
-input[type="number"],
-input[type="date"],
-select {
-  width: 100%;
-  padding: 10px;
-  margin-top: 5px;
-  box-sizing: border-box;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.button {
-  padding: 10px 18px;
-  margin-top: 20px;
-  margin-right: 10px;
-  border: none;
-  border-radius: 4px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.primary-button {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.primary-button:disabled {
-  background-color: #a0d6a4;
-  cursor: not-allowed;
-}
-
-.secondary-button {
-  background-color: #444;
-  color: white;
-}
-
-.small-button {
-  margin-bottom: 15px;
-  background-color: #4CAF50;
-  color: white;
-}
-
-.status-message {
-  margin-top: 15px;
-  font-size: 14px;
-  color: #2a7a2e;
-}
-
-.status-message.error {
-  color: red;
-}
-
-.optional {
-  font-weight: normal;
-  font-size: 0.9em;
-  color: #888;
-}
-
 table {
-  width: 90%;
-  margin: 30px auto;
+  width: 100%;
   border-collapse: collapse;
+  margin-top: 15px;
 }
 
-th, td {
-  padding: 10px;
-  border: 1px solid #ccc;
-  text-align: left;
+table, th, td {
+  border: 1px solid #ddd;
 }
 
 th {
   background-color: #4CAF50;
   color: white;
+  padding: 10px;
 }
 
-.location-heading {
-  margin-top: 40px;
-  color: #2a7a2e;
-  font-size: 18px;
+td {
+  padding: 10px;
+  text-align: center;
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 16px;
+  margin: 20px auto;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+.btn.green {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.btn.grey {
+  background-color: #555;
+  color: white;
+}
+
+.btn.home-btn {
+  background-color: #555;
+  color: white;
+  font-weight: bold;
+  padding: 12px 28px;
+  font-size: 16px;
+  margin-bottom: 40px;
+}
+
+input, select {
+  padding: 10px;
+  margin: 10px 0;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+input:disabled, select:disabled {
+  background-color: #f1f1f1;
+  color: #999;
+}
+
+.success-message {
+  color: green;
+  margin-top: 10px;
+}
+
+.error-message {
+  color: red;
+  margin-top: 10px;
+}
+
+.form-container {
+  max-width: 400px;
+  margin: auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
