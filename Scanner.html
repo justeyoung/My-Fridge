@@ -39,8 +39,7 @@
 
       <label for="barcode">Scanned Barcode:</label>
       <input type="text" id="barcode" name="barcode" readonly value="(none)" />
-
-      <p id="lookupResult" class="status-message"></p>
+      <p id="productMessage" class="status-message"></p>
 
       <div class="button-group">
         <button type="submit" id="submitBtn" class="button green" disabled>Add Item</button>
@@ -51,8 +50,8 @@
     <p id="statusMessage" class="status-message"></p>
   </div>
 
-  <!-- Scanner Modal -->
-  <div id="scannerModal" class="modal hidden">
+  <!-- Scanner Container (Hidden until activated) -->
+  <div id="scannerContainer" class="form-card hidden">
     <h3>Scan Barcode</h3>
     <div id="reader" style="width: 100%"></div>
     <div class="button-group">
@@ -65,17 +64,20 @@
   <script>
     const form = document.getElementById('addItemForm');
     const itemInput = document.getElementById('item');
-    const barcodeInput = document.getElementById('barcode');
-    const quantityInput = document.getElementById('quantity');
-    const statusMessage = document.getElementById('statusMessage');
-    const lookupResult = document.getElementById('lookupResult');
-    const scanBtn = document.getElementById('scanBtn');
-    const scannerModal = document.getElementById('scannerModal');
-    const cancelScanBtn = document.getElementById('cancelScanBtn');
-    const flipCameraBtn = document.getElementById('flipCameraBtn');
     const submitBtn = document.getElementById('submitBtn');
+    const statusMessage = document.getElementById('statusMessage');
+    const productMessage = document.getElementById('productMessage');
+    const barcodeInput = document.getElementById('barcode');
+    const purchaseDate = document.getElementById('purchaseDate');
 
-    document.getElementById('purchaseDate').valueAsDate = new Date();
+    const scanBtn = document.getElementById('scanBtn');
+    const scannerContainer = document.getElementById('scannerContainer');
+    const flipCameraBtn = document.getElementById('flipCameraBtn');
+    const cancelScanBtn = document.getElementById('cancelScanBtn');
+
+    let scanner, cameras = [], cameraId = null;
+
+    purchaseDate.valueAsDate = new Date();
 
     itemInput.addEventListener('input', () => {
       submitBtn.disabled = itemInput.value.trim() === '';
@@ -85,7 +87,6 @@
       e.preventDefault();
       const formData = new FormData(form);
       formData.append("action", "add");
-
       statusMessage.textContent = "Adding item...";
 
       try {
@@ -97,68 +98,78 @@
         statusMessage.textContent = result.includes("success") || result.includes("updated") ? result : "Error adding item.";
         form.reset();
         barcodeInput.value = "(none)";
-        lookupResult.textContent = "";
-        document.getElementById('purchaseDate').valueAsDate = new Date();
+        productMessage.textContent = "";
+        purchaseDate.valueAsDate = new Date();
         submitBtn.disabled = true;
       } catch (err) {
         statusMessage.textContent = "Error adding item.";
       }
     });
 
-    // Scanner logic
-    let scanner, cameraId = null, cameras = [];
-
     scanBtn.addEventListener('click', async () => {
-      scannerModal.classList.remove('hidden');
+      scannerContainer.classList.remove('hidden');
       scanner = new Html5Qrcode("reader");
       cameras = await Html5Qrcode.getCameras();
       if (cameras.length) {
         cameraId = cameras[0].id;
-        startCamera(cameraId);
+        scanner.start(
+          cameraId,
+          { fps: 10, qrbox: 250 },
+          async (decodedText) => {
+            barcodeInput.value = decodedText;
+            scanner.stop();
+            scanner.clear();
+            scannerContainer.classList.add('hidden');
+            await fetchProduct(decodedText);
+            submitBtn.disabled = itemInput.value.trim() === '';
+          }
+        );
       }
     });
 
-    function startCamera(cameraId) {
-      scanner.start(cameraId, { fps: 10, qrbox: 250 }, onScanSuccess);
-    }
-
-    async function onScanSuccess(decodedText) {
-      scanner.stop();
-      scanner.clear();
-      scannerModal.classList.add('hidden');
-      barcodeInput.value = decodedText;
-      lookupResult.textContent = "Looking up product...";
-      try {
-        const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${decodedText}.json`);
-        const data = await res.json();
-        if (data.status === 1) {
-          const productName = data.product.product_name || data.product.generic_name || "Unnamed Product";
-          itemInput.value = productName;
-          lookupResult.textContent = `Product found: ${productName}`;
-          submitBtn.disabled = false;
-        } else {
-          lookupResult.textContent = "Product not found.";
-        }
-      } catch {
-        lookupResult.textContent = "Error fetching product info.";
-      }
-    }
-
-    flipCameraBtn.addEventListener('click', () => {
-      if (!cameras.length) return;
-      const currentIndex = cameras.findIndex(c => c.id === cameraId);
-      const nextIndex = (currentIndex + 1) % cameras.length;
-      cameraId = cameras[nextIndex].id;
-      scanner.stop().then(() => startCamera(cameraId));
-    });
-
-    cancelScanBtn.addEventListener('click', () => {
+    cancelScanBtn.addEventListener('click', async () => {
       if (scanner) {
-        scanner.stop();
+        await scanner.stop();
         scanner.clear();
-        scannerModal.classList.add('hidden');
+        scannerContainer.classList.add('hidden');
       }
     });
+
+    flipCameraBtn.addEventListener('click', async () => {
+      if (!cameras.length) return;
+      const nextIndex = (cameras.findIndex(c => c.id === cameraId) + 1) % cameras.length;
+      cameraId = cameras[nextIndex].id;
+      await scanner.stop();
+      scanner.start(
+        cameraId,
+        { fps: 10, qrbox: 250 },
+        async (decodedText) => {
+          barcodeInput.value = decodedText;
+          await scanner.stop();
+          scanner.clear();
+          scannerContainer.classList.add('hidden');
+          await fetchProduct(decodedText);
+          submitBtn.disabled = itemInput.value.trim() === '';
+        }
+      );
+    });
+
+    async function fetchProduct(barcode) {
+      const url = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
+      productMessage.textContent = "Looking up product...";
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.status === 1 && data.product.product_name) {
+          itemInput.value = data.product.product_name;
+          productMessage.textContent = "";
+        } else {
+          productMessage.textContent = "Product not found.";
+        }
+      } catch (err) {
+        productMessage.textContent = "Error looking up product.";
+      }
+    }
   </script>
 </body>
 </html>
