@@ -8,7 +8,8 @@
 </head>
 <body>
   <h2 class="title">Edit Inventory</h2>
-  <div id="editorContainer"></div>
+
+  <div id="editContainer"></div>
 
   <div class="button-group" style="justify-content: center;">
     <a href="index.html" class="button grey">Home</a>
@@ -16,64 +17,68 @@
 
   <script>
     const endpoint = "https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec";
-    let groupedData = {};
+
+    let inventoryData = [];
 
     fetch(endpoint)
       .then(res => res.json())
       .then(data => {
-        groupedData = groupByLocation(data);
-        displayEditor(groupedData);
+        inventoryData = data;
+        renderEditableTables(groupByLocation(data));
       })
       .catch(() => {
-        document.getElementById("editorContainer").innerHTML = "<p class='status-message error'>Error loading data.</p>";
+        document.getElementById("editContainer").innerHTML = "<p class='status-message error'>Failed to load inventory data.</p>";
       });
 
     function groupByLocation(data) {
       return data.reduce((acc, item) => {
-        const location = item["Location"] || "Unknown";
-        if (!acc[location]) acc[location] = [];
-        acc[location].push(item);
+        const loc = item["Location"] || "Unknown";
+        if (!acc[loc]) acc[loc] = [];
+        acc[loc].push(item);
         return acc;
       }, {});
     }
 
-    function displayEditor(grouped) {
-      const container = document.getElementById("editorContainer");
+    function renderEditableTables(grouped) {
+      const container = document.getElementById("editContainer");
       container.innerHTML = "";
 
       Object.entries(grouped).forEach(([location, items]) => {
-        const section = document.createElement("section");
+        const section = document.createElement("div");
+        section.className = "form-card";
+        section.dataset.location = location;
 
         const heading = document.createElement("h3");
         heading.textContent = `Location: ${location}`;
         section.appendChild(heading);
 
         const table = document.createElement("table");
-        const thead = document.createElement("thead");
-        thead.innerHTML = `
-          <tr>
-            <th>#</th>
-            <th>Item</th>
-            <th contenteditable="false">Quantity</th>
-            <th contenteditable="false">Unit</th>
-            <th contenteditable="false">Purchase Date</th>
-            <th contenteditable="false">Expiry Date</th>
-            <th contenteditable="false">Notes</th>
-          </tr>`;
-        table.appendChild(thead);
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Unit</th>
+              <th>Purchase</th>
+              <th>Expiry</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+        `;
 
         const tbody = document.createElement("tbody");
         items.forEach((item, index) => {
           const row = document.createElement("tr");
-          row.dataset.id = item["ID"];
           row.innerHTML = `
             <td>${index + 1}</td>
-            <td>${item["Item"]}</td>
-            <td contenteditable="true">${item["Quantity"] || ""}</td>
-            <td contenteditable="true">${item["Unit"] || ""}</td>
-            <td contenteditable="true">${item["Purchase Date"] || ""}</td>
-            <td contenteditable="true">${item["Expiry Date"] || ""}</td>
-            <td contenteditable="true">${item["Notes"] || ""}</td>`;
+            <td><input data-id="${item["ID"]}" name="Item" value="${item["Item"] || ""}" /></td>
+            <td><input name="Quantity" type="number" value="${item["Quantity"] || 0}" /></td>
+            <td><input name="Unit" value="${item["Unit"] || ""}" /></td>
+            <td><input name="Purchase Date" type="date" value="${formatDateForInput(item["Purchase Date"])}" /></td>
+            <td><input name="Expiry Date" type="date" value="${formatDateForInput(item["Expiry Date"])}" /></td>
+            <td><input name="Notes" value="${item["Notes"] || ""}" /></td>
+          `;
           tbody.appendChild(row);
         });
 
@@ -83,42 +88,43 @@
         const saveBtn = document.createElement("button");
         saveBtn.className = "button green";
         saveBtn.textContent = "Save Changes";
-        saveBtn.onclick = () => saveTable(section);
+        saveBtn.onclick = () => saveChanges(section);
         section.appendChild(saveBtn);
 
         container.appendChild(section);
       });
     }
 
-    function saveTable(section) {
+    function formatDateForInput(date) {
+      if (!date) return "";
+      const d = new Date(date);
+      if (isNaN(d)) return "";
+      return d.toISOString().split("T")[0];
+    }
+
+    async function saveChanges(section) {
       const rows = section.querySelectorAll("tbody tr");
-      rows.forEach(async row => {
-        const id = row.dataset.id;
-        const cells = row.querySelectorAll("td");
-        const payload = {
+      for (const row of rows) {
+        const id = row.querySelector("input[name='Item']").dataset.id;
+        const values = {
           action: "update",
           id: id,
-          quantity: cells[2].textContent.trim(),
-          unit: cells[3].textContent.trim(),
-          purchaseDate: cells[4].textContent.trim(),
-          expiryDate: cells[5].textContent.trim(),
-          notes: cells[6].textContent.trim()
+          item: row.querySelector("input[name='Item']").value,
+          quantity: row.querySelector("input[name='Quantity']").value,
+          unit: row.querySelector("input[name='Unit']").value,
+          purchaseDate: row.querySelector("input[name='Purchase Date']").value,
+          expiryDate: row.querySelector("input[name='Expiry Date']").value,
+          notes: row.querySelector("input[name='Notes']").value
         };
 
-        try {
-          const response = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams(payload)
-          });
-          const result = await response.text();
-          console.log(`Row ${id} saved:`, result);
-        } catch (err) {
-          console.error(`Failed to save row ${id}:`, err);
-        }
-      });
+        await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams(values).toString()
+        });
+      }
 
-      alert("Changes saved for this table.");
+      alert("Changes saved.");
     }
   </script>
 </body>
