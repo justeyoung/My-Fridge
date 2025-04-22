@@ -16,14 +16,15 @@
       <label for="item">Item Name:</label>
       <input type="text" id="item" name="item" required />
 
-      <label for="quantity">Quantity to Remove:</label>
-      <select id="quantity" name="quantity" required></select>
+      <label for="quantitySelect">Quantity to Remove:</label>
+      <select id="quantitySelect" required></select>
+      <input type="number" id="customQuantity" name="quantity" min="1" placeholder="Enter quantity" style="display:none;" />
 
       <label for="barcode">Scanned Barcode:</label>
       <input type="text" id="barcode" name="barcode" readonly value="(none)" />
 
       <div class="button-group">
-        <button type="submit" id="submitBtn" class="button green" disabled>Remove Item</button>
+        <button type="submit" class="button green">Remove Item</button>
         <a href="index.html" class="button grey">Home</a>
       </div>
 
@@ -31,8 +32,7 @@
     </form>
   </div>
 
-  <!-- Scanner Modal -->
-  <div id="scannerModal" class="modal hidden">
+  <div id="scannerBox" class="form-card hidden">
     <h3>Scan Barcode</h3>
     <div id="reader" style="width: 100%"></div>
     <div class="button-group">
@@ -43,28 +43,39 @@
 
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script>
+    const form = document.getElementById("removeForm");
+    const itemInput = document.getElementById("item");
+    const statusMessage = document.getElementById("statusMessage");
+    const barcodeInput = document.getElementById("barcode");
+    const scanBtn = document.getElementById("scanBtn");
+    const scannerBox = document.getElementById("scannerBox");
+    const flipCameraBtn = document.getElementById("flipCameraBtn");
+    const cancelScanBtn = document.getElementById("cancelScanBtn");
+
+    const quantitySelect = document.getElementById("quantitySelect");
+    const customQuantity = document.getElementById("customQuantity");
+
     // Populate quantity dropdown
-    const qtyDropdown = document.getElementById("quantity");
     for (let i = 1; i <= 20; i++) {
       const option = document.createElement("option");
       option.value = i;
       option.textContent = i;
-      qtyDropdown.appendChild(option);
+      quantitySelect.appendChild(option);
     }
-    qtyDropdown.appendChild(new Option("More than 20", "More than 20"));
+    const customOption = document.createElement("option");
+    customOption.value = "custom";
+    customOption.textContent = "More than 20";
+    quantitySelect.appendChild(customOption);
 
-    const form = document.getElementById("removeForm");
-    const itemInput = document.getElementById("item");
-    const quantityInput = document.getElementById("quantity");
-    const barcodeInput = document.getElementById("barcode");
-    const statusMessage = document.getElementById("statusMessage");
-    const submitBtn = document.getElementById("submitBtn");
-
-    function toggleSubmit() {
-      submitBtn.disabled = itemInput.value.trim() === "" || quantityInput.value === "";
-    }
-    itemInput.addEventListener("input", toggleSubmit);
-    quantityInput.addEventListener("change", toggleSubmit);
+    quantitySelect.addEventListener("change", () => {
+      if (quantitySelect.value === "custom") {
+        customQuantity.style.display = "block";
+        customQuantity.name = "quantity";
+      } else {
+        customQuantity.style.display = "none";
+        customQuantity.name = "";
+      }
+    });
 
     form.addEventListener("submit", async function (e) {
       e.preventDefault();
@@ -72,7 +83,7 @@
       const formData = new URLSearchParams({
         action: "remove",
         item: itemInput.value.trim(),
-        quantity: quantityInput.value,
+        quantity: quantitySelect.value === "custom" ? customQuantity.value.trim() : quantitySelect.value,
         barcode: barcodeInput.value.trim() === "(none)" ? "" : barcodeInput.value.trim()
       });
 
@@ -91,7 +102,8 @@
         if (result.toLowerCase().includes("updated") || result.toLowerCase().includes("removed")) {
           form.reset();
           barcodeInput.value = "(none)";
-          toggleSubmit();
+          quantitySelect.value = "1";
+          customQuantity.style.display = "none";
         }
       } catch {
         statusMessage.textContent = "Error removing item.";
@@ -101,46 +113,37 @@
       setTimeout(() => statusMessage.textContent = "", 5000);
     });
 
-    // Scanner controls
-    const scanBtn = document.getElementById("scanBtn");
-    const scannerModal = document.getElementById("scannerModal");
-    const cancelScanBtn = document.getElementById("cancelScanBtn");
-    const flipCameraBtn = document.getElementById("flipCameraBtn");
-    let scanner, cameraId = null, cameras = [];
-
-    scanBtn.addEventListener('click', async () => {
-      scannerModal.classList.remove('hidden');
+    // Barcode scanning logic
+    let scanner, cameras = [], cameraId;
+    scanBtn.addEventListener("click", async () => {
+      scannerBox.classList.remove("hidden");
       scanner = new Html5Qrcode("reader");
       cameras = await Html5Qrcode.getCameras();
       if (cameras.length) {
         cameraId = cameras[0].id;
-        scanner.start(cameraId, { fps: 10, qrbox: 250 }, (decodedText) => {
-          barcodeInput.value = decodedText;
-          scanner.stop();
-          scanner.clear();
-          scannerModal.classList.add('hidden');
+        scanner.start(cameraId, { fps: 10, qrbox: 250 }, (text) => {
+          barcodeInput.value = text;
+          scanner.stop().then(() => scannerBox.classList.add("hidden"));
         });
       }
     });
 
-    cancelScanBtn.addEventListener('click', async () => {
+    cancelScanBtn.addEventListener("click", async () => {
       if (scanner) {
         await scanner.stop();
         scanner.clear();
-        scannerModal.classList.add('hidden');
+        scannerBox.classList.add("hidden");
       }
     });
 
-    flipCameraBtn.addEventListener('click', () => {
+    flipCameraBtn.addEventListener("click", () => {
       if (!cameras.length) return;
-      const index = (cameras.findIndex(c => c.id === cameraId) + 1) % cameras.length;
-      cameraId = cameras[index].id;
+      const currentIndex = cameras.findIndex(c => c.id === cameraId);
+      cameraId = cameras[(currentIndex + 1) % cameras.length].id;
       scanner.stop().then(() => {
-        scanner.start(cameraId, { fps: 10, qrbox: 250 }, (decodedText) => {
-          barcodeInput.value = decodedText;
-          scanner.stop();
-          scanner.clear();
-          scannerModal.classList.add('hidden');
+        scanner.start(cameraId, { fps: 10, qrbox: 250 }, (text) => {
+          barcodeInput.value = text;
+          scanner.stop().then(() => scannerBox.classList.add("hidden"));
         });
       });
     });
