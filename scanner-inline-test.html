@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scanner Inline Test</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <h2>Inline Scanner Test</h2>
+
+  <div class="form-card">
+    <label for="barcode">Scanned Barcode:</label>
+    <input type="text" id="barcode" readonly value="(none)" />
+
+    <div id="reader" style="width: 100%; max-width: 300px; margin: 20px auto;"></div>
+
+    <div class="button-group">
+      <button id="flipCameraBtn" class="button green">Flip Camera</button>
+      <button id="cancelScanBtn" class="button grey">Cancel Scan</button>
+      <a href="index.html" class="button grey">Home</a>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script>
+    const barcodeInput = document.getElementById('barcode');
+    const flipCameraBtn = document.getElementById('flipCameraBtn');
+    const cancelScanBtn = document.getElementById('cancelScanBtn');
+
+    let scanner, cameras = [], cameraId = null;
+
+    async function startScanner() {
+      try {
+        scanner = new Html5Qrcode("reader");
+        cameras = await Html5Qrcode.getCameras();
+        if (cameras.length) {
+          cameraId = cameras[0].id;
+          await scanner.start(
+            cameraId,
+            { fps: 10, qrbox: 250 },
+            (decodedText) => {
+              barcodeInput.value = decodedText;
+              stopScanner();
+            }
+          );
+        }
+      } catch (err) {
+        console.error("Scanner error:", err);
+        barcodeInput.value = "Error starting scanner.";
+      }
+    }
+
+    async function stopScanner() {
+      if (scanner) {
+        await scanner.stop();
+        scanner.clear();
+      }
+    }
+
+    flipCameraBtn.addEventListener('click', async () => {
+      if (!cameras.length) return;
+      const currentIndex = cameras.findIndex(c => c.id === cameraId);
+      const nextIndex = (currentIndex + 1) % cameras.length;
+      cameraId = cameras[nextIndex].id;
+      await stopScanner();
+      await scanner.start(
+        cameraId,
+        { fps: 10, qrbox: 250 },
+        (decodedText) => {
+          barcodeInput.value = decodedText;
+          stopScanner();
+        }
+      );
+    });
+
+    cancelScanBtn.addEventListener('click', async () => {
+      await stopScanner();
+    });
+
+    // Start scanner on load
+    startScanner();
+  </script>
+</body>
+</html>
