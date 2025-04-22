@@ -10,8 +10,6 @@
   <h2 class="title">Add Item to Fridge</h2>
 
   <div class="form-card">
-    <button id="scanBtn" class="button green">Scan Barcode</button>
-
     <form id="addItemForm">
       <label for="item">Item Name:</label>
       <input type="text" id="item" name="item" required />
@@ -40,6 +38,13 @@
       <label for="barcode">Scanned Barcode:</label>
       <input type="text" id="barcode" name="barcode" readonly value="(none)" />
 
+      <div id="reader" style="width: 100%; margin-top: 10px;"></div>
+
+      <div class="button-group">
+        <button type="button" id="flipCameraBtn" class="button green">Flip Camera</button>
+        <button type="button" id="cancelScanBtn" class="button grey">Cancel Scan</button>
+      </div>
+
       <div class="button-group">
         <button type="submit" id="submitBtn" class="button green" disabled>Add Item</button>
         <a href="index.html" class="button grey">Home</a>
@@ -49,34 +54,18 @@
     <p id="statusMessage" class="status-message"></p>
   </div>
 
-  <!-- Scanner Modal -->
-  <div id="scannerModal" class="modal hidden">
-    <h3>Scan Barcode</h3>
-    <div id="reader" style="width: 100%"></div>
-    <div class="button-group">
-      <button id="flipCameraBtn" class="button grey">Flip Camera</button>
-      <button id="cancelScanBtn" class="button grey">Cancel Scan</button>
-    </div>
-  </div>
-
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script>
     const form = document.getElementById('addItemForm');
     const itemInput = document.getElementById('item');
     const submitBtn = document.getElementById('submitBtn');
-    const barcodeInput = document.getElementById('barcode');
     const statusMessage = document.getElementById('statusMessage');
-
-    const scanBtn = document.getElementById('scanBtn');
-    const scannerModal = document.getElementById('scannerModal');
-    const cancelScanBtn = document.getElementById('cancelScanBtn');
+    const barcodeInput = document.getElementById('barcode');
     const flipCameraBtn = document.getElementById('flipCameraBtn');
+    const cancelScanBtn = document.getElementById('cancelScanBtn');
+    let scanner, cameraId = null, cameras = [];
 
-    let scanner;
-    let cameraId = null;
-    let cameras = [];
-
-    // Set default purchase date
+    // Default purchase date is today
     document.getElementById('purchaseDate').valueAsDate = new Date();
 
     // Enable submit only if item name is filled
@@ -84,6 +73,7 @@
       submitBtn.disabled = itemInput.value.trim() === '';
     });
 
+    // Submit form
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(form);
@@ -92,10 +82,13 @@
       statusMessage.textContent = "Adding item...";
 
       try {
-        const response = await fetch("https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec", {
-          method: "POST",
-          body: formData
-        });
+        const response = await fetch(
+          "https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec",
+          {
+            method: "POST",
+            body: formData
+          }
+        );
 
         const result = await response.text();
         statusMessage.textContent = result.includes("success") || result.includes("updated")
@@ -106,13 +99,13 @@
         barcodeInput.value = "(none)";
         document.getElementById('purchaseDate').valueAsDate = new Date();
         submitBtn.disabled = true;
-      } catch {
+      } catch (err) {
         statusMessage.textContent = "Error adding item.";
       }
     });
 
-    scanBtn.addEventListener('click', async () => {
-      scannerModal.classList.remove('hidden');
+    // Start barcode scanner
+    async function startScanner() {
       scanner = new Html5Qrcode("reader");
       cameras = await Html5Qrcode.getCameras();
       if (cameras.length) {
@@ -122,38 +115,38 @@
           { fps: 10, qrbox: 250 },
           (decodedText) => {
             barcodeInput.value = decodedText;
-            scanner.stop();
-            scanner.clear();
-            scannerModal.classList.add('hidden');
+            stopScanner();
           }
         );
       }
-    });
+    }
 
-    cancelScanBtn.addEventListener('click', async () => {
-      if (scanner) {
-        await scanner.stop();
-        scanner.clear();
-        scannerModal.classList.add('hidden');
-      }
-    });
-
+    // Flip camera
     flipCameraBtn.addEventListener('click', async () => {
       if (!cameras.length) return;
-      const nextIndex = (cameras.findIndex(c => c.id === cameraId) + 1) % cameras.length;
+      const currentIndex = cameras.findIndex(c => c.id === cameraId);
+      const nextIndex = (currentIndex + 1) % cameras.length;
       cameraId = cameras[nextIndex].id;
       await scanner.stop();
-      await scanner.start(
-        cameraId,
-        { fps: 10, qrbox: 250 },
+      await scanner.start(cameraId, { fps: 10, qrbox: 250 },
         (decodedText) => {
           barcodeInput.value = decodedText;
-          scanner.stop();
-          scanner.clear();
-          scannerModal.classList.add('hidden');
-        }
-      );
+          stopScanner();
+        });
     });
+
+    // Cancel scanner
+    cancelScanBtn.addEventListener('click', stopScanner);
+
+    async function stopScanner() {
+      if (scanner) {
+        await scanner.stop();
+        await scanner.clear();
+      }
+    }
+
+    // Auto-start scanner
+    startScanner();
   </script>
 </body>
 </html>
