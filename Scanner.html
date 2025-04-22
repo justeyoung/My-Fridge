@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h2>Add Item to Fridge</h2>
+  <h2 class="title">Add Item to Fridge</h2>
 
   <div class="form-card">
     <button id="scanBtn" class="button green">Scan Barcode</button>
@@ -53,7 +53,7 @@
   <div id="scannerModal" class="modal hidden">
     <h3>Scan Barcode</h3>
     <div id="reader" style="width: 100%"></div>
-    <div class="button-group" style="justify-content: center; margin-top: 15px;">
+    <div class="button-group">
       <button id="flipCameraBtn" class="button grey">Flip Camera</button>
       <button id="cancelScanBtn" class="button grey">Cancel Scan</button>
     </div>
@@ -64,24 +64,26 @@
     const form = document.getElementById('addItemForm');
     const itemInput = document.getElementById('item');
     const submitBtn = document.getElementById('submitBtn');
-    const statusMessage = document.getElementById('statusMessage');
     const barcodeInput = document.getElementById('barcode');
+    const statusMessage = document.getElementById('statusMessage');
+
     const scanBtn = document.getElementById('scanBtn');
     const scannerModal = document.getElementById('scannerModal');
     const cancelScanBtn = document.getElementById('cancelScanBtn');
     const flipCameraBtn = document.getElementById('flipCameraBtn');
-    let scanner, cameraId = null, cameras = [];
 
-    // Set default purchase date to today
+    let scanner;
+    let cameraId = null;
+    let cameras = [];
+
+    // Set default purchase date
     document.getElementById('purchaseDate').valueAsDate = new Date();
 
-    // Enable/disable submit button
-    function toggleSubmitButton() {
+    // Enable submit only if item name is filled
+    itemInput.addEventListener('input', () => {
       submitBtn.disabled = itemInput.value.trim() === '';
-    }
-    itemInput.addEventListener('input', toggleSubmitButton);
+    });
 
-    // Form submission
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(form);
@@ -90,10 +92,11 @@
       statusMessage.textContent = "Adding item...";
 
       try {
-        const response = await fetch(
-          "https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec",
-          { method: "POST", body: formData }
-        );
+        const response = await fetch("https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec", {
+          method: "POST",
+          body: formData
+        });
+
         const result = await response.text();
         statusMessage.textContent = result.includes("success") || result.includes("updated")
           ? result
@@ -102,20 +105,19 @@
         form.reset();
         barcodeInput.value = "(none)";
         document.getElementById('purchaseDate').valueAsDate = new Date();
-        toggleSubmitButton();
-      } catch (err) {
+        submitBtn.disabled = true;
+      } catch {
         statusMessage.textContent = "Error adding item.";
       }
     });
 
-    // Scanner logic
     scanBtn.addEventListener('click', async () => {
       scannerModal.classList.remove('hidden');
       scanner = new Html5Qrcode("reader");
       cameras = await Html5Qrcode.getCameras();
       if (cameras.length) {
         cameraId = cameras[0].id;
-        scanner.start(
+        await scanner.start(
           cameraId,
           { fps: 10, qrbox: 250 },
           (decodedText) => {
@@ -138,11 +140,10 @@
 
     flipCameraBtn.addEventListener('click', async () => {
       if (!cameras.length) return;
-      const currentIndex = cameras.findIndex(c => c.id === cameraId);
-      const nextIndex = (currentIndex + 1) % cameras.length;
+      const nextIndex = (cameras.findIndex(c => c.id === cameraId) + 1) % cameras.length;
       cameraId = cameras[nextIndex].id;
       await scanner.stop();
-      scanner.start(
+      await scanner.start(
         cameraId,
         { fps: 10, qrbox: 250 },
         (decodedText) => {
