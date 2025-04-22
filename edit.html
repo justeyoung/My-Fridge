@@ -8,6 +8,10 @@
 </head>
 <body>
   <h2 class="title">Edit Inventory</h2>
+  <p style="text-align:center; margin-top: -10px; color: #666;">
+    <em>Note: To remove the entire item, just change the quantity to 0.</em>
+  </p>
+
   <div id="editorContainer"></div>
 
   <div class="button-group" style="justify-content: center;">
@@ -16,28 +20,32 @@
 
   <script>
     const endpoint = "https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec";
+    let groupedData = {};
 
     fetch(endpoint)
       .then(res => res.json())
       .then(data => {
-        const grouped = {};
-        data.forEach(item => {
-          const location = item["Location"] || "Unknown";
-          if (!grouped[location]) grouped[location] = [];
-          grouped[location].push(item);
-        });
-
-        displayEditor(grouped);
+        groupedData = groupByLocation(data);
+        displayEditor(groupedData);
       })
       .catch(() => {
         document.getElementById("editorContainer").innerHTML = "<p class='status-message error'>Error loading data.</p>";
       });
 
-    function displayEditor(groupedData) {
+    function groupByLocation(data) {
+      return data.reduce((acc, item) => {
+        const location = item["Location"] || "Unknown";
+        if (!acc[location]) acc[location] = [];
+        acc[location].push(item);
+        return acc;
+      }, {});
+    }
+
+    function displayEditor(grouped) {
       const container = document.getElementById("editorContainer");
       container.innerHTML = "";
 
-      Object.entries(groupedData).forEach(([location, items]) => {
+      Object.entries(grouped).forEach(([location, items]) => {
         const section = document.createElement("section");
 
         const heading = document.createElement("h3");
@@ -52,8 +60,6 @@
             <th>Item</th>
             <th>Quantity</th>
             <th>Unit</th>
-            <th>Purchase Date</th>
-            <th>Expiry Date</th>
             <th>Notes</th>
           </tr>`;
         table.appendChild(thead);
@@ -64,11 +70,9 @@
           row.dataset.id = item["ID"];
           row.innerHTML = `
             <td>${index + 1}</td>
-            <td contenteditable="true">${item["Item"] || ""}</td>
+            <td contenteditable="true">${item["Item"]}</td>
             <td contenteditable="true">${item["Quantity"] || ""}</td>
             <td contenteditable="true">${item["Unit"] || ""}</td>
-            <td contenteditable="true">${item["Purchase Date"] || ""}</td>
-            <td contenteditable="true">${item["Expiry Date"] || ""}</td>
             <td contenteditable="true">${item["Notes"] || ""}</td>`;
           tbody.appendChild(row);
         });
@@ -91,32 +95,28 @@
       rows.forEach(async row => {
         const id = row.dataset.id;
         const cells = row.querySelectorAll("td");
-        const payload = {
-          action: "update",
-          id: id,
-          item: cells[1].textContent.trim(),
-          quantity: cells[2].textContent.trim(),
-          unit: cells[3].textContent.trim(),
-          purchaseDate: cells[4].textContent.trim(),
-          expiryDate: cells[5].textContent.trim(),
-          notes: cells[6].textContent.trim()
-        };
+        const qty = cells[2].textContent.trim();
+        if (qty === "0" || qty === "") {
+          // Delete row from sheet
+          await fetch(endpoint, {
+            method: "POST",
+            body: new URLSearchParams({ action: "remove", item: cells[1].textContent.trim(), quantity: qty })
+          });
+        } else {
+          // Update row
+          const payload = {
+            action: "update",
+            id: id,
+            quantity: qty,
+            unit: cells[3].textContent.trim(),
+            notes: cells[4].textContent.trim()
+          };
 
-        if (payload.quantity === "" || payload.quantity === "0") {
-          // Delete the row
-          payload.action = "remove";
-        }
-
-        try {
-          const response = await fetch(endpoint, {
+          await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams(payload)
           });
-          const result = await response.text();
-          console.log(`Row ${id} processed:`, result);
-        } catch (err) {
-          console.error(`Failed to update row ${id}:`, err);
         }
       });
 
