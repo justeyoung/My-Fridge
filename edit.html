@@ -20,21 +20,18 @@
     fetch(endpoint)
       .then(res => res.json())
       .then(data => {
-        const grouped = groupByLocation(data);
+        const grouped = {};
+        data.forEach(item => {
+          const location = item["Location"] || "Unknown";
+          if (!grouped[location]) grouped[location] = [];
+          grouped[location].push(item);
+        });
+
         displayEditor(grouped);
       })
       .catch(() => {
         document.getElementById("editorContainer").innerHTML = "<p class='status-message error'>Error loading data.</p>";
       });
-
-    function groupByLocation(data) {
-      return data.reduce((acc, item) => {
-        const loc = item["Location"] || "Unknown";
-        if (!acc[loc]) acc[loc] = [];
-        acc[loc].push(item);
-        return acc;
-      }, {});
-    }
 
     function displayEditor(groupedData) {
       const container = document.getElementById("editorContainer");
@@ -42,6 +39,7 @@
 
       Object.entries(groupedData).forEach(([location, items]) => {
         const section = document.createElement("section");
+
         const heading = document.createElement("h3");
         heading.textContent = `Location: ${location}`;
         section.appendChild(heading);
@@ -54,105 +52,22 @@
             <th>Item</th>
             <th>Quantity</th>
             <th>Unit</th>
+            <th>Purchase Date</th>
+            <th>Expiry Date</th>
             <th>Notes</th>
           </tr>`;
         table.appendChild(thead);
 
         const tbody = document.createElement("tbody");
-
         items.forEach((item, index) => {
           const row = document.createElement("tr");
           row.dataset.id = item["ID"];
-
-          // Quantity dropdown
-          let qtyOptions = '';
-          for (let i = 1; i <= 20; i++) {
-            qtyOptions += `<option value="${i}" ${parseInt(item["Quantity"]) === i ? "selected" : ""}>${i}</option>`;
-          }
-          qtyOptions += `<option value="custom">More than 20</option>`;
-
           row.innerHTML = `
             <td>${index + 1}</td>
-            <td>${item["Item"]}</td>
-            <td>
-              <select class="qtySelect">${qtyOptions}</select>
-              <input type="number" class="qtyCustom" min="1" style="display:none;" value="${parseInt(item["Quantity"]) > 20 ? item["Quantity"] : ""}" />
-            </td>
+            <td contenteditable="true">${item["Item"] || ""}</td>
+            <td contenteditable="true">${item["Quantity"] || ""}</td>
             <td contenteditable="true">${item["Unit"] || ""}</td>
-            <td contenteditable="true">${item["Notes"] || ""}</td>
-          `;
+            <td contenteditable="true">${item["Purchase Date"] || ""}</td>
+            <td contenteditable="true">${item["Expiry Date"] || ""}</td>
+            <td contenteditable="true">${item["Notes"] || ""}</td>`;
           tbody.appendChild(row);
-        });
-
-        table.appendChild(tbody);
-        section.appendChild(table);
-
-        const saveBtn = document.createElement("button");
-        saveBtn.className = "button green";
-        saveBtn.textContent = "Save Changes";
-        saveBtn.onclick = () => saveTable(section);
-        section.appendChild(saveBtn);
-
-        container.appendChild(section);
-      });
-
-      // Hook up dropdown toggle logic
-      container.querySelectorAll(".qtySelect").forEach(select => {
-        select.addEventListener("change", () => {
-          const input = select.parentElement.querySelector(".qtyCustom");
-          if (select.value === "custom") {
-            input.style.display = "inline-block";
-          } else {
-            input.style.display = "none";
-          }
-        });
-      });
-    }
-
-    function saveTable(section) {
-      const rows = section.querySelectorAll("tbody tr");
-      rows.forEach(async row => {
-        const id = row.dataset.id;
-        const cells = row.querySelectorAll("td");
-        const select = row.querySelector(".qtySelect");
-        const customInput = row.querySelector(".qtyCustom");
-
-        let quantity = select.value === "custom" ? customInput.value.trim() : select.value;
-
-        if (quantity === "" || parseInt(quantity) === 0) {
-          // Delete row
-          await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({ action: "remove", id })
-          });
-          row.remove();
-          return;
-        }
-
-        const payload = {
-          action: "update",
-          id: id,
-          quantity: quantity,
-          unit: cells[3].textContent.trim(),
-          notes: cells[4].textContent.trim()
-        };
-
-        try {
-          const response = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams(payload)
-          });
-          const result = await response.text();
-          console.log(`Row ${id} saved:`, result);
-        } catch (err) {
-          console.error(`Failed to save row ${id}:`, err);
-        }
-      });
-
-      alert("Changes saved.");
-    }
-  </script>
-</body>
-</html>
