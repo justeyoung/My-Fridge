@@ -8,8 +8,7 @@
 </head>
 <body>
   <h2 class="title">Edit Inventory</h2>
-
-  <div id="editContainer"></div>
+  <div id="editorContainer"></div>
 
   <div class="button-group" style="justify-content: center;">
     <a href="index.html" class="button grey">Home</a>
@@ -17,68 +16,60 @@
 
   <script>
     const endpoint = "https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec";
-
-    let inventoryData = [];
+    let groupedData = {};
 
     fetch(endpoint)
       .then(res => res.json())
       .then(data => {
-        inventoryData = data;
-        renderEditableTables(groupByLocation(data));
+        groupedData = groupByLocation(data);
+        displayEditor(groupedData);
       })
       .catch(() => {
-        document.getElementById("editContainer").innerHTML = "<p class='status-message error'>Failed to load inventory data.</p>";
+        document.getElementById("editorContainer").innerHTML = "<p class='status-message error'>Error loading data.</p>";
       });
 
     function groupByLocation(data) {
       return data.reduce((acc, item) => {
-        const loc = item["Location"] || "Unknown";
-        if (!acc[loc]) acc[loc] = [];
-        acc[loc].push(item);
+        const location = item["Location"] || "Unknown";
+        if (!acc[location]) acc[location] = [];
+        acc[location].push(item);
         return acc;
       }, {});
     }
 
-    function renderEditableTables(grouped) {
-      const container = document.getElementById("editContainer");
+    function displayEditor(grouped) {
+      const container = document.getElementById("editorContainer");
       container.innerHTML = "";
 
       Object.entries(grouped).forEach(([location, items]) => {
-        const section = document.createElement("div");
-        section.className = "form-card";
-        section.dataset.location = location;
+        const section = document.createElement("section");
 
         const heading = document.createElement("h3");
         heading.textContent = `Location: ${location}`;
         section.appendChild(heading);
 
         const table = document.createElement("table");
-        table.innerHTML = `
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Item</th>
-              <th>Qty</th>
-              <th>Unit</th>
-              <th>Purchase</th>
-              <th>Expiry</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-        `;
+        const thead = document.createElement("thead");
+        thead.innerHTML = `
+          <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Unit</th>
+            <th>Notes</th>
+          </tr>`;
+        table.appendChild(thead);
 
         const tbody = document.createElement("tbody");
         items.forEach((item, index) => {
           const row = document.createElement("tr");
+          row.dataset.id = item["ID"];
           row.innerHTML = `
             <td>${index + 1}</td>
-            <td><input data-id="${item["ID"]}" name="Item" value="${item["Item"] || ""}" /></td>
-            <td><input name="Quantity" type="number" value="${item["Quantity"] || 0}" /></td>
-            <td><input name="Unit" value="${item["Unit"] || ""}" /></td>
-            <td><input name="Purchase Date" type="date" value="${formatDateForInput(item["Purchase Date"])}" /></td>
-            <td><input name="Expiry Date" type="date" value="${formatDateForInput(item["Expiry Date"])}" /></td>
-            <td><input name="Notes" value="${item["Notes"] || ""}" /></td>
-          `;
+            <td>${item["Item"]}</td>
+            <td contenteditable="true">${item["Quantity"] || ""}</td>
+            <td contenteditable="true">${item["Unit"] || ""}</td>
+            <td contenteditable="true">${item["Notes"] || ""}</td>`;
           tbody.appendChild(row);
         });
 
@@ -88,43 +79,41 @@
         const saveBtn = document.createElement("button");
         saveBtn.className = "button green";
         saveBtn.textContent = "Save Changes";
-        saveBtn.onclick = () => saveChanges(section);
+        saveBtn.onclick = () => saveTable(section);
         section.appendChild(saveBtn);
 
         container.appendChild(section);
       });
     }
 
-    function formatDateForInput(date) {
-      if (!date) return "";
-      const d = new Date(date);
-      if (isNaN(d)) return "";
-      return d.toISOString().split("T")[0];
-    }
-
-    async function saveChanges(section) {
+    function saveTable(section) {
       const rows = section.querySelectorAll("tbody tr");
-      for (const row of rows) {
-        const id = row.querySelector("input[name='Item']").dataset.id;
-        const values = {
+      rows.forEach(async row => {
+        const id = row.dataset.id;
+        const cells = row.querySelectorAll("td");
+
+        const payload = {
           action: "update",
           id: id,
-          item: row.querySelector("input[name='Item']").value,
-          quantity: row.querySelector("input[name='Quantity']").value,
-          unit: row.querySelector("input[name='Unit']").value,
-          purchaseDate: row.querySelector("input[name='Purchase Date']").value,
-          expiryDate: row.querySelector("input[name='Expiry Date']").value,
-          notes: row.querySelector("input[name='Notes']").value
+          quantity: cells[2].textContent.trim(),
+          unit: cells[3].textContent.trim(),
+          notes: cells[4].textContent.trim()
         };
 
-        await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams(values).toString()
-        });
-      }
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams(payload)
+          });
+          const result = await response.text();
+          console.log(`Row ${id} saved:`, result);
+        } catch (err) {
+          console.error(`Failed to save row ${id}:`, err);
+        }
+      });
 
-      alert("Changes saved.");
+      alert("Changes saved for this table.");
     }
   </script>
 </body>
