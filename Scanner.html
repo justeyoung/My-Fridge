@@ -18,29 +18,10 @@
 
       <label for="quantity">Quantity:</label>
       <select id="quantity" name="quantity" required>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-        <option value="8">8</option>
-        <option value="9">9</option>
-        <option value="10">10</option>
-        <option value="11">11</option>
-        <option value="12">12</option>
-        <option value="13">13</option>
-        <option value="14">14</option>
-        <option value="15">15</option>
-        <option value="16">16</option>
-        <option value="17">17</option>
-        <option value="18">18</option>
-        <option value="19">19</option>
-        <option value="20">20</option>
-        <option value="custom">More than 30</option>
+        ${[...Array(20)].map((_, i) => `<option value="${i+1}">${i+1}</option>`).join("")}
+        <option value="custom">More than 20</option>
       </select>
-      <input type="number" id="customQuantity" name="customQuantity" placeholder="Enter quantity" style="display:none;" />
+      <input type="number" id="customQuantity" name="customQuantity" min="21" placeholder="Enter quantity" style="display: none; margin-top: 10px;" />
 
       <label for="unit">Unit: <span class="optional">(optional)</span></label>
       <input type="text" id="unit" name="unit" />
@@ -72,8 +53,8 @@
     <p id="statusMessage" class="status-message"></p>
   </div>
 
-  <div id="scannerInline" style="display: none; text-align:center; margin-top: 20px;">
-    <div id="reader" style="width: 100%"></div>
+  <div id="scannerContainer" class="form-card" style="display: none;">
+    <div id="reader" style="width: 100%; margin-top: 20px;"></div>
     <div class="button-group">
       <button id="flipCameraBtn" class="button green">Flip Camera</button>
       <button id="cancelScanBtn" class="button grey">Cancel Scan</button>
@@ -82,104 +63,94 @@
 
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script>
-    const form = document.getElementById("addItemForm");
-    const itemInput = document.getElementById("item");
-    const submitBtn = document.getElementById("submitBtn");
-    const statusMessage = document.getElementById("statusMessage");
-    const barcodeInput = document.getElementById("barcode");
-    const scanBtn = document.getElementById("scanBtn");
-    const quantitySelect = document.getElementById("quantity");
-    const customQuantityInput = document.getElementById("customQuantity");
-
-    const readerContainer = document.getElementById("scannerInline");
-    const cancelScanBtn = document.getElementById("cancelScanBtn");
-    const flipCameraBtn = document.getElementById("flipCameraBtn");
+    const form = document.getElementById('addItemForm');
+    const itemInput = document.getElementById('item');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusMessage = document.getElementById('statusMessage');
+    const barcodeInput = document.getElementById('barcode');
+    const scanBtn = document.getElementById('scanBtn');
+    const scannerContainer = document.getElementById('scannerContainer');
+    const cancelScanBtn = document.getElementById('cancelScanBtn');
+    const flipCameraBtn = document.getElementById('flipCameraBtn');
+    const quantitySelect = document.getElementById('quantity');
+    const customQuantity = document.getElementById('customQuantity');
 
     let scanner, cameraId = null, cameras = [];
 
-    // Default purchase date = today
+    // Default purchase date
     document.getElementById('purchaseDate').valueAsDate = new Date();
 
+    // Enable submit if item name is filled
     function toggleSubmitButton() {
-      const quantityValid = quantitySelect.value !== "custom" || customQuantityInput.value.trim() !== "";
-      submitBtn.disabled = itemInput.value.trim() === '' || !quantityValid;
+      submitBtn.disabled = itemInput.value.trim() === '';
     }
-
     itemInput.addEventListener('input', toggleSubmitButton);
-    customQuantityInput.addEventListener('input', toggleSubmitButton);
 
+    // Handle quantity dropdown logic
     quantitySelect.addEventListener("change", () => {
       if (quantitySelect.value === "custom") {
-        customQuantityInput.style.display = "block";
-        customQuantityInput.required = true;
+        customQuantity.style.display = "block";
+        customQuantity.required = true;
       } else {
-        customQuantityInput.style.display = "none";
-        customQuantityInput.required = false;
+        customQuantity.style.display = "none";
+        customQuantity.required = false;
       }
-      toggleSubmitButton();
     });
 
-    function getFinalQuantity() {
-      return quantitySelect.value === "custom"
-        ? customQuantityInput.value.trim()
-        : quantitySelect.value;
-    }
-
-    form.addEventListener("submit", async function (e) {
+    // Submit form
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(form);
-      formData.set("quantity", getFinalQuantity());
       formData.append("action", "add");
+
+      const qty = quantitySelect.value === "custom" ? customQuantity.value : quantitySelect.value;
+      formData.set("quantity", qty);
 
       statusMessage.textContent = "Adding item...";
 
       try {
-        const response = await fetch("https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec", {
-          method: "POST",
-          body: formData
-        });
-
+        const response = await fetch(
+          "https://script.google.com/macros/s/AKfycbyThkEhW3QIAIZcXhgvc5bfDgwZ8TG7wZqley13fHAqreh9FnohK37jcfPx8HlHgRXD/exec",
+          {
+            method: "POST",
+            body: formData
+          }
+        );
         const result = await response.text();
         statusMessage.textContent = result.includes("success") || result.includes("updated") ? result : "Error adding item.";
-
         form.reset();
         barcodeInput.value = "(none)";
-        customQuantityInput.style.display = "none";
+        customQuantity.style.display = "none";
         document.getElementById('purchaseDate').valueAsDate = new Date();
         toggleSubmitButton();
-      } catch {
+      } catch (err) {
         statusMessage.textContent = "Error adding item.";
       }
     });
 
-    scanBtn.addEventListener("click", async () => {
-      readerContainer.style.display = "block";
+    // Barcode scanning
+    scanBtn.addEventListener('click', async () => {
+      scannerContainer.style.display = 'block';
       scanner = new Html5Qrcode("reader");
       cameras = await Html5Qrcode.getCameras();
       if (cameras.length) {
         cameraId = cameras[0].id;
-        scanner.start(cameraId, { fps: 10, qrbox: 250 }, (decodedText) => {
-          barcodeInput.value = decodedText;
-          stopScanner();
-        });
+        scanner.start(
+          cameraId,
+          { fps: 10, qrbox: 250 },
+          (decodedText) => {
+            barcodeInput.value = decodedText;
+            stopScanner();
+          }
+        );
       }
     });
 
-    async function stopScanner() {
-      if (scanner) {
-        await scanner.stop();
-        scanner.clear();
-        readerContainer.style.display = "none";
-      }
-    }
-
-    cancelScanBtn.addEventListener("click", stopScanner);
-
-    flipCameraBtn.addEventListener("click", () => {
+    cancelScanBtn.addEventListener('click', stopScanner);
+    flipCameraBtn.addEventListener('click', () => {
       if (!cameras.length) return;
       const currentIndex = cameras.findIndex(c => c.id === cameraId);
-      const nextIndex = (currentIndex + 1) % cameras.length;
-      cameraId = cameras[nextIndex].id;
+      cameraId = cameras[(currentIndex + 1) % cameras.length].id;
       scanner.stop().then(() => {
         scanner.start(cameraId, { fps: 10, qrbox: 250 }, (decodedText) => {
           barcodeInput.value = decodedText;
@@ -187,6 +158,14 @@
         });
       });
     });
+
+    async function stopScanner() {
+      if (scanner) {
+        await scanner.stop();
+        scanner.clear();
+        scannerContainer.style.display = 'none';
+      }
+    }
   </script>
 </body>
 </html>
