@@ -71,3 +71,57 @@
             <td contenteditable="true">${item["Expiry Date"] || ""}</td>
             <td contenteditable="true">${item["Notes"] || ""}</td>`;
           tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+        section.appendChild(table);
+
+        const saveBtn = document.createElement("button");
+        saveBtn.className = "button green";
+        saveBtn.textContent = "Save Changes";
+        saveBtn.onclick = () => saveTable(section);
+        section.appendChild(saveBtn);
+
+        container.appendChild(section);
+      });
+    }
+
+    function saveTable(section) {
+      const rows = section.querySelectorAll("tbody tr");
+      rows.forEach(async row => {
+        const id = row.dataset.id;
+        const cells = row.querySelectorAll("td");
+        const payload = {
+          action: "update",
+          id: id,
+          item: cells[1].textContent.trim(),
+          quantity: cells[2].textContent.trim(),
+          unit: cells[3].textContent.trim(),
+          purchaseDate: cells[4].textContent.trim(),
+          expiryDate: cells[5].textContent.trim(),
+          notes: cells[6].textContent.trim()
+        };
+
+        if (payload.quantity === "" || payload.quantity === "0") {
+          // Delete the row
+          payload.action = "remove";
+        }
+
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams(payload)
+          });
+          const result = await response.text();
+          console.log(`Row ${id} processed:`, result);
+        } catch (err) {
+          console.error(`Failed to update row ${id}:`, err);
+        }
+      });
+
+      alert("Changes saved for this table.");
+    }
+  </script>
+</body>
+</html>
