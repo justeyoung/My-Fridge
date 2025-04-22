@@ -158,7 +158,7 @@ th {
   border: 1px solid #ddd;
 }
 
-/* Home Button at Bottom */
+/* Home Button */
 .btn.home-btn {
   background-color: #555;
   color: white;
@@ -171,4 +171,23 @@ th {
   cursor: pointer;
   display: inline-block;
   transition: background-color 0.3s ease;
+}
+
+/* Launcher Styling */
+.launcher-title {
+  color: #2a7d2e;
+  margin-top: 40px;
+  text-align: center;
+}
+
+.launcher-card {
+  background-color: white;
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 30px 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
